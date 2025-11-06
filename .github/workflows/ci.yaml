@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-    # Só executa a pipeline se houver alteração em qualquer uma destas pastas
     paths:
       - 'backend/**'
       - 'simulator/**'
@@ -16,64 +15,56 @@ jobs:
   # JOB 1: BACKEND (Consumidor)
   # =================================================================
   build_backend:
+    name: Push backend image to Docker Hub
     runs-on: ubuntu-latest
-        
     steps:
-      - name: 1. Checkout do Código (Permitir push)
+      - name: 1. Checkout do Código
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
-          fetch-depth: 0 
 
-      - name: 2. Login no Docker Hub
+      - name: 2. Definir Variáveis e Tag
+        id: vars
+        run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      
+      - name: 3. Login no Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           
-      - name: 3. Definir Variáveis e Tag
-        id: vars
-        run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-      
       - name: 4. Build e Push da Imagem do Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./backend # Set context to the backend folder
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.TAG }}
-            ${{ secrets.DOCKER_USERNAME }}/backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.TAG }} # Version tag
+            ${{ secrets.DOCKER_USERNAME }}/backend:latest # Latest tag
 
   # =================================================================
   # JOB 2: SIMULATOR (Produtor)
   # =================================================================
   build_simulator:
-    needs: build_backend
+    needs: build_backend # Waits for backend build to complete
+    name: Push simulator image to Docker Hub
     runs-on: ubuntu-latest
-      
     steps:
       - name: 1. Checkout do Código
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
-          fetch-depth: 0
 
-      - name: 2. Login no Docker Hub
+      - name: 2. Definir Variáveis e Tag
+        id: vars
+        run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      
+      - name: 3. Login no Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           
-      - name: 3. Definir Variáveis e Tag
-        id: vars
-        run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-      
       - name: 4. Build e Push da Imagem do Simulator
         uses: docker/build-push-action@v5
         with:
-          context: ./simulator
+          context: ./simulator # Set context to the simulator folder
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/simulator:${{ steps.vars.outputs.TAG }}
@@ -83,65 +74,28 @@ jobs:
   # JOB 3: FRONTEND (UI)
   # =================================================================
   build_frontend:
-    needs: build_simulator
+    needs: build_simulator # Waits for simulator build to complete
+    name: Push frontend image to Docker Hub
     runs-on: ubuntu-latest
-
     steps:
       - name: 1. Checkout do Código
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }} 
-          persist-credentials: true
-          fetch-depth: 0
 
-      - name: 2. Login no Docker Hub
+      - name: 2. Definir Variáveis e Tag
+        id: vars
+        run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+      
+      - name: 3. Login no Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           
-      - name: 3. Definir Variáveis e Tag
-        id: vars
-        run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-      
       - name: 4. Build e Push da Imagem do Frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: ./frontend # Set context to the frontend folder
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.TAG }}
             ${{ secrets.DOCKER_USERNAME }}/frontend:latest
-
-# NOVO JOB: atualizar manifests k8s com o tag gerado e push para main
-  deploy_manifests:
-    needs: build_frontend
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout do Código (permissão para push)
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
-          fetch-depth: 0
-
-      - name: Definir TAG
-        id: vars
-        run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-
-      - name: Atualizar manifests k8s com novas imagens
-        run: |
-          set -e
-          TAG=${{ steps.vars.outputs.TAG }}
-          USER=${{ secrets.DOCKER_USERNAME }}
-          sed -i "s|image: .*backend:.*|image: ${USER}/backend:${TAG}|g" k8s/backend/back-deployment.yaml
-          sed -i "s|image: .*simulator:.*|image: ${USER}/simulator:${TAG}|g" k8s/simulator/sim-deployment.yaml
-          sed -i "s|image: .*frontend:.*|image: ${USER}/frontend:${TAG}|g" k8s/frontend/front-deployment.yaml
-
-      - name: Commit e Push dos manifests atualizados
-        run: |
-          git config user.email "action@github.com"
-          git config user.name "github-actions[bot]"
-          git add k8s/backend/back-deployment.yaml k8s/simulator/sim-deployment.yaml k8s/frontend/front-deployment.yaml
-          git commit -m "ci: update k8s images to ${USER}:${TAG}" || echo "No changes to commit"
-          git push origin HEAD:main
