@@ -41,7 +41,9 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.TAG }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/backend:latest
 
   # =================================================================
   # JOB 2: SIMULATOR (Produtor)
@@ -73,7 +75,9 @@ jobs:
         with:
           context: ./simulator
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/simulator:${{ steps.vars.outputs.TAG }}
+           tags: |
+            ${{ secrets.DOCKER_USERNAME }}/simulator:${{ steps.vars.outputs.TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/simulator:latest
 
   # =================================================================
   # JOB 3: FRONTEND (UI)
@@ -105,4 +109,39 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.TAG }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+
+# NOVO JOB: atualizar manifests k8s com o tag gerado e push para main
+deploy_manifests:
+  needs: build_frontend
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout do Código (permissão para push)
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        persist-credentials: true
+        fetch-depth: 0
+
+    - name: Definir TAG
+      id: vars
+      run: echo "TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+    - name: Atualizar manifests k8s com novas imagens
+      run: |
+        set -e
+        TAG=${{ steps.vars.outputs.TAG }}
+        USER=${{ secrets.DOCKER_USERNAME }}
+        sed -i "s|image: .*backend:.*|image: ${USER}/backend:${TAG}|g" k8s/backend/back-deployment.yaml
+        sed -i "s|image: .*simulator:.*|image: ${USER}/simulator:${TAG}|g" k8s/simulator/sim-deployment.yaml
+        sed -i "s|image: .*frontend:.*|image: ${USER}/frontend:${TAG}|g" k8s/frontend/front-deployment.yaml
+
+    - name: Commit e Push dos manifests atualizados
+      run: |
+        git config user.email "action@github.com"
+        git config user.name "github-actions[bot]"
+        git add k8s/backend/back-deployment.yaml k8s/simulator/sim-deployment.yaml k8s/frontend/front-deployment.yaml
+        git commit -m "ci: update k8s images to ${USER}:${TAG}" || echo "No changes to commit"
+        git push origin HEAD:main
