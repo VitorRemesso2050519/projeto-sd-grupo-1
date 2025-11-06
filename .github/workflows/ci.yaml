@@ -34,17 +34,17 @@ jobs:
       - name: 4. Build e Push da Imagem do Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./backend # Set context to the backend folder
+          context: ./backend
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.TAG }} # Version tag
-            ${{ secrets.DOCKER_USERNAME }}/backend:latest # Latest tag
+            ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/backend:latest
 
   # =================================================================
   # JOB 2: SIMULATOR (Produtor)
   # =================================================================
   build_simulator:
-    needs: build_backend # Waits for backend build to complete
+    needs: build_backend
     name: Push simulator image to Docker Hub
     runs-on: ubuntu-latest
     steps:
@@ -64,7 +64,7 @@ jobs:
       - name: 4. Build e Push da Imagem do Simulator
         uses: docker/build-push-action@v5
         with:
-          context: ./simulator # Set context to the simulator folder
+          context: ./simulator
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/simulator:${{ steps.vars.outputs.TAG }}
@@ -74,7 +74,7 @@ jobs:
   # JOB 3: FRONTEND (UI)
   # =================================================================
   build_frontend:
-    needs: build_simulator # Waits for simulator build to complete
+    needs: build_simulator
     name: Push frontend image to Docker Hub
     runs-on: ubuntu-latest
     steps:
@@ -94,7 +94,7 @@ jobs:
       - name: 4. Build e Push da Imagem do Frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend # Set context to the frontend folder
+          context: ./frontend
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.TAG }}
