@@ -47,3 +47,5 @@ async def receive_event(event: dict):
         connections.remove(connection)
 
     return {"status": "event sent"}
+
+# Testing CI trigger.
