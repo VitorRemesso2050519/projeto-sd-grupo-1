@@ -48,4 +48,4 @@ async def receive_event(event: dict):
 
     return {"status": "event sent"}
 
-# Testing CI trigger.
+# Testing CI trigger a second time.
