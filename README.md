@@ -4,7 +4,7 @@ Para o ArgoCD:
 - kubectl create namespace argocd
 - kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 - kubectl -n argocd port-forward svc/argocd-server 8080:443
-- kubectl apply -n argocd -f k8s/argoCD.yaml
+- kubectl apply -n argocd -f k8s/trail-run-app.yaml
 
 1ªFASE: 12/11/2025 CI/CD AUTOMÁTICO COM A APLICAÇÃO BASE (10%):
 - Criar um repositório Github público e montar toda a pipeline de CI/CD para o cluster local no Docker Desktop.
