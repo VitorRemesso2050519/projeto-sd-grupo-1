@@ -5,10 +5,8 @@ metadata:
   labels:
     app: backend
 spec:
-  type: ClusterIP
   selector:
     app: backend
   ports:
-    - protocol: TCP
       port: 8000
       targetPort: 8000

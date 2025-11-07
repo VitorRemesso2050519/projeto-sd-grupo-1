@@ -1,34 +1,50 @@
 version: "3.8"
 
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
   backend:
-    build:
-      context: ./backend
+    build: ./backend
+    container_name: trail-backend
+    environment:
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBIT_EXCHANGE: events
+      RABBIT_QUEUE: events.gps
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8000:8000"
-    networks:
-      - app-network
-
-  simulator:
-    build:
-      context: ./simulator
-    depends_on:
-      - backend
-    networks:
-      - app-network
-    volumes:
-      - ./simulator/trail_route.gpx:/app/trail_route.gpx
 
   frontend:
-    build:
-      context: ./frontend
+    build: ./frontend
+    container_name: trail-frontend
     ports:
-      - "8080:80"
-    networks:
-      - app-network
-    volumes:
-      - ./simulator/trail_route.gpx:/usr/share/nginx/html/gpx/trail_route.gpx
+      - "8081:80"
+    depends_on:
+      - backend
 
-networks:
-  app-network:
-    driver: bridge
+  simulator:
+    build: ./simulator
+    container_name: trail-simulator
+    environment:
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBIT_EXCHANGE: events
+      RABBIT_ROUTING_KEY: gps.update
+      GPX_FILE_PATH: /app/trail_route.gpx
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
