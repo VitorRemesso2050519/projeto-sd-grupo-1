@@ -1,0 +1,38 @@
+{{- if .Values.simulator.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trail-simulator
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: trail-simulator }
+  template:
+    metadata:
+      labels: { app: trail-simulator }
+    spec:
+      containers:
+      - name: simulator
+        image: {{ .Values.images.simulator }}
+        env:
+        - name: RABBIT_URL
+          value: "amqp://{{ .Values.rabbitmq.username }}:{{ .Values.rabbitmq.password }}@{{ .Values.rabbitmq.serviceName }}:{{ .Values.rabbitmq.port }}/%2F"
+        - name: RABBIT_EXCHANGE
+          value: {{ .Values.rabbitmq.exchange | quote }}
+        - name: RABBIT_ROUTING_KEY
+          value: {{ .Values.rabbitmq.routingKey | quote }}
+        - name: GPX_FILE_PATH
+          value: {{ .Values.simulator.gpxFile | quote }}
+        volumeMounts:
+        {{- if .Values.storage.gpx.enabled }}
+        - name: gpx-volume
+          mountPath: /gpx
+        {{- end }}
+      volumes:
+      {{- if .Values.storage.gpx.enabled }}
+      - name: gpx-volume
+        persistentVolumeClaim:
+          claimName: gpx-pvc
+      {{- end }}
+{{- end }}

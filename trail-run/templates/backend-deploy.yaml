@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trail-backend
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels: { app: trail-backend }
+  template:
+    metadata:
+      labels: { app: trail-backend }
+    spec:
+      containers:
+      - name: backend
+        image: {{ .Values.images.backend }}
+        ports:
+        - containerPort: {{ .Values.backend.port }}
+        env:
+        - name: RABBIT_URL
+          value: "amqp://{{ .Values.rabbitmq.username }}:{{ .Values.rabbitmq.password }}@{{ .Values.rabbitmq.serviceName }}:{{ .Values.rabbitmq.port }}/"
+        - name: RABBIT_EXCHANGE
+          value: {{ .Values.rabbitmq.exchange | quote }}
+        - name: RABBIT_QUEUE
+          value: {{ .Values.rabbitmq.queue | quote }}

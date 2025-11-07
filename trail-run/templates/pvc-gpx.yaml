@@ -1,0 +1,15 @@
+{{- if .Values.storage.gpx.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gpx-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes: [ "ReadWriteMany" ]
+  resources:
+    requests:
+      storage: {{ .Values.storage.gpx.size }}
+  {{- if .Values.storage.gpx.storageClassName }}
+  storageClassName: {{ .Values.storage.gpx.storageClassName }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,49 @@
+namespace: trail-run
+
+images:
+  rabbitmq: rabbitmq:3-management
+  backend: vitorremesso/backend:latest
+  frontend: vitorremesso/frontend:latest
+  simulator: vitorremesso/simulator:latest
+
+rabbitmq:
+  username: guest
+  password: guest
+  serviceName: rabbitmq
+  port: 5672
+  managementPort: 15672
+  exchange: events
+  queue: events.gps
+  routingKey: gps.update
+
+backend:
+  serviceName: trail-backend
+  port: 8000
+  replicaCount: 1
+
+frontend:
+  serviceName: trail-frontend
+  port: 80
+  wsUrl: "ws://trail-backend:8000/ws"
+  replicaCount: 1
+
+simulator:
+  enabled: true
+  gpxFile: /gpx/trail_route.gpx
+
+storage:
+  gpx:
+    enabled: true
+    size: 1Gi
+    storageClassName: ""
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: false
+  className: nginx
+  host: trail.local
+  tls: false
+
+resources: {}

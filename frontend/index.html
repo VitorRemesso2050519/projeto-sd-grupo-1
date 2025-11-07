@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.5.1/gpx.min.js"></script>
+
+    <script src="/etc/trail-frontend/config.js"></script>
+
     <style>
         #map {
             height: 100vh;
@@ -43,7 +46,7 @@
         const athleteMarkers = {};
 
         // Connect to the WebSocket
-        const socket = new WebSocket("ws://localhost:8000/ws");
+         const socket = new WebSocket(window.__BACKEND_WS_URL__ || "ws://localhost:8000/ws");
 
         const maleIcon = L.icon({
             iconUrl: "male.png", //"https://leafletjs.com/examples/custom-icons/leaf-blue.png", // Replace with a blue icon
