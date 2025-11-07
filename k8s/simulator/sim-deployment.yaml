@@ -18,15 +18,24 @@ spec:
         - name: simulator
           image: vitorremesso/simulator:latest
           env:
-            - name: INGESTION_ENDPOINT
-              value: "http://backend:8000/events"
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "250m"
-              memory: "256Mi"
+            - name: RABBIT_USER
+              valueFrom: 
+                secretKeyRef:
+                  name: rabbitmq-auth
+                  key: username
+            - name: RABBIT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-auth
+                  key: password } }
+            - name: RABBIT_URL
+              value: amqp://$(RABBIT_USER):$(RABBIT_PASS)@rabbitmq:5672/%2F
+            - name: RABBIT_EXCHANGE
+              value: events
+            - name: RABBIT_ROUTING_KEY
+              value: gps.update
+            - name: GPX_FILE_PATH
+              value: /data/trail_route.gpx
           volumeMounts:
             - name: gpx-volume
               mountPath: /app/trail_route.gpx

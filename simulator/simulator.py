@@ -2,99 +2,129 @@ import gpxpy
 import gpxpy.gpx
 import time
 import random
-import requests
+import json
+import os
+from threading import Thread
+import pika
 
-# Configuration
-INGESTION_ENDPOINT = "http://backend:8000/events"  # Update this if needed
-GPX_FILE_PATH = "trail_route.gpx"  # Path to the GPX file
+# --- Configuration (env-overridable) ---
+RABBIT_URL = os.getenv("RABBIT_URL", "amqp://guest:guest@rabbitmq:5672/%2F")
+RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")
+RABBIT_ROUTING_KEY = os.getenv("RABBIT_ROUTING_KEY", "gps.update")
+GPX_FILE_PATH = os.getenv("GPX_FILE_PATH", "trail_route.gpx")
+
 ATHLETES = [
     {"name": "John Doe", "gender": "male"},
     {"name": "Jane Smith", "gender": "female"},
     {"name": "Alice Johnson", "gender": "female"},
-    {"name": "Bob Brown", "gender": "male"}
+    {"name": "Bob Brown", "gender": "male"},
 ]
-SPEED_VARIATION = (6, 12)  # Speed range in km/h for each athlete
+SPEED_VARIATION = (6, 12)  # km/h
 
-# Function to read the GPX file
+
+def get_channel():
+    """
+    Create a BlockingConnection + channel to RabbitMQ with exponential backoff.
+    Returns (connection, channel). Declares the fanout exchange as durable.
+    """
+    params = pika.URLParameters(RABBIT_URL)
+    backoff = 1
+    while True:
+        try:
+            connection = pika.BlockingConnection(params)
+            ch = connection.channel()
+            ch.exchange_declare(exchange=RABBIT_EXCHANGE, exchange_type="fanout", durable=True)
+            print("Simulator connected to RabbitMQ.")
+            return connection, ch
+        except Exception as e:
+            print(f"RabbitMQ connect failed: {e}. Retrying in {backoff}s")
+            time.sleep(backoff)
+            backoff = min(backoff * 2, 30)
+
+
 def read_gpx(file_path):
-    with open(file_path, 'r') as gpx_file:
-        gpx = gpxpy.parse(gpx_file)
-    return gpx
+    with open(file_path, "r") as gpx_file:
+        return gpxpy.parse(gpx_file)
 
-# Function to simulate an athlete's movement along the trail
-def simulate_athlete(athlete, points, speed_kmh):
-    athlete_name = athlete["name"]
-    athlete_gender = athlete["gender"]
-    # Convert speed to meters per second
-    speed_mps = speed_kmh / 3.6
 
-    # Simulate movement between points
-    for i in range(len(points) - 1):
-        start = points[i]
-        end = points[i + 1]
+def simulate_athlete(athlete, points):
+    """
+    Each athlete runs in its own thread and uses its own AMQP connection/channel.
+    (pika BlockingConnection/Channel is NOT thread-safe.)
+    """
+    name = athlete["name"]
+    gender = athlete["gender"]
+    speed_kmh = random.uniform(*SPEED_VARIATION)
+    speed_mps = max(speed_kmh / 3.6, 0.1)  # avoid division by zero
 
-        # Calculate the distance between points (in meters)
-        distance = start.distance_3d(end)
+    conn, ch = get_channel()
+    try:
+        print(f"Simulating {name} ({gender}) at {speed_kmh:.2f} km/h")
 
-        # Calculate the time required to travel this segment (in seconds)
-        duration = distance / speed_mps
+        for i in range(len(points) - 1):
+            start = points[i]
+            end = points[i + 1]
 
-        # Interpolate positions along the segment
-        for t in range(int(duration)):
-            fraction = t / duration
-            lat = start.latitude + fraction * (end.latitude - start.latitude)
-            lon = start.longitude + fraction * (end.longitude - start.longitude)
-            ele = start.elevation + fraction * (end.elevation - start.elevation)
+            # Distance (m) and duration (s) for the segment
+            distance = start.distance_3d(end) or 0.0
+            duration = max(int(distance / speed_mps), 1)
 
-            # Create the event
-            event = {
-                "athlete": athlete_name,
-                "gender": athlete_gender,
-                "location": {"latitude": lat, "longitude": lon},
-                "elevation": ele,
-                "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                "event": "running"
-            }
+            for t in range(duration):
+                fraction = t / duration
+                lat = start.latitude + fraction * (end.latitude - start.latitude)
+                lon = start.longitude + fraction * (end.longitude - start.longitude)
+                # Handle None elevations
+                s_ele = start.elevation or 0.0
+                e_ele = end.elevation or 0.0
+                ele = s_ele + fraction * (e_ele - s_ele)
 
-            # Send the event to the backend
+                event = {
+                    "athlete": name,
+                    "gender": gender,
+                    "location": {"latitude": lat, "longitude": lon},
+                    "elevation": ele,
+                    "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "event": "running",
+                }
+
+                ch.basic_publish(
+                    exchange=RABBIT_EXCHANGE,
+                    routing_key=RABBIT_ROUTING_KEY,
+                    body=json.dumps(event).encode("utf-8"),
+                    properties=pika.BasicProperties(
+                        content_type="application/json",
+                        delivery_mode=2,  # persistent
+                    ),
+                )
+                print(f"Published: {event}")
+                time.sleep(1)
+    finally:
+        with conn:
             try:
-                response = requests.post(INGESTION_ENDPOINT, json=event)
-                print(f"Sent: {event} | Response: {response.status_code}")
-            except Exception as e:
-                print(f"Error sending event: {e}")
+                ch.close()
+            except Exception:
+                pass
 
-            # Wait for 1 second to simulate real-time updates
-            time.sleep(1)
 
-# Main function to simulate multiple athletes
 def simulate_multiple_athletes():
-    # Read the GPX file
+    # Read the GPX once and flatten points
     gpx = read_gpx(GPX_FILE_PATH)
-
-    # Extract all points from the GPX file
     points = []
     for track in gpx.tracks:
         for segment in track.segments:
             points.extend(segment.points)
 
-    # Simulate each athlete in a separate thread
-    from threading import Thread
-
+    # Spawn one thread per athlete (each with its own AMQP connection)
     threads = []
     for athlete in ATHLETES:
-        # Assign a random speed within the defined range
-        speed_kmh = random.uniform(*SPEED_VARIATION)
-        print(f"Simulating {athlete} at {speed_kmh:.2f} km/h")
+        th = Thread(target=simulate_athlete, args=(athlete, points), daemon=True)
+        threads.append(th)
+        th.start()
 
-        # Create a thread for the athlete
-        thread = Thread(target=simulate_athlete, args=(athlete, points, speed_kmh))
-        threads.append(thread)
-        thread.start()
+    # Wait for all threads to finish (they finish when the route ends)
+    for th in threads:
+        th.join()
 
-    # Wait for all threads to finish
-    for thread in threads:
-        thread.join()
 
-# Run the simulation
 if __name__ == "__main__":
     simulate_multiple_athletes()
