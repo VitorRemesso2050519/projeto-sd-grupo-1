@@ -26,6 +26,12 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
           resources:
             requests:
               cpu: "50m"
@@ -41,3 +47,7 @@ spec:
         - name: gpx-volume
           persistentVolumeClaim:
             claimName: pvc-gpx
+# Deployment do serviço frontend
+# Utiliza readiness e liveness probes para garantir disponibilidade
+# Volume para ficheiro GPX via PVC
+# Limites de recursos definidos

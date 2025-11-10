@@ -27,7 +27,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: rabbitmq-auth
-                  key: password } }
+                  key: password
             - name: RABBIT_URL
               value: amqp://$(RABBIT_USER):$(RABBIT_PASS)@rabbitmq:5672/%2F
             - name: RABBIT_EXCHANGE
@@ -48,7 +48,21 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
+          livenessProbe:
+            exec:
+              command: ["python", "-c", "import os; print('ok')"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command: ["python", "-c", "import os; print('ok')"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
       volumes:
         - name: gpx-volume
           persistentVolumeClaim:
             claimName: pvc-gpx
+# Deployment do simulador de atletas
+# Utiliza variáveis de ambiente seguras via Secret
+# Volume para ficheiro GPX via PVC
+# Limites de recursos e probes definidos

@@ -13,3 +13,6 @@ spec:
       targetPort: 80
       protocol: TCP
       nodePort: 30080
+# Service para expor o frontend externamente
+# Tipo NodePort para acesso fora do cluster
+# Porta 30080 mapeada para 80

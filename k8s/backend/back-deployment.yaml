@@ -5,7 +5,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 2
+  replicas: 2 # Define 2 réplicas para alta disponibilidade
   selector:
     matchLabels:
       app: backend
@@ -36,3 +36,26 @@ spec:
               value: events
             - name: RABBIT_QUEUE
               value: events.gps
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+# Deployment do serviço backend
+# Define 2 réplicas para alta disponibilidade
+# Utiliza variáveis de ambiente seguras via Secret
+# Adiciona probes e limites de recursos
