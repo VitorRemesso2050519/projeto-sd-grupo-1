@@ -1,8 +1,9 @@
 images:
   rabbitmq: rabbitmq:3-management
-  backend: vitorremesso/backend:latest
-  frontend: vitorremesso/frontend:latest
-  simulator: vitorremesso/simulator:latest
+  backend: vitorremesso/backend:v1.0.0
+  frontend: vitorremesso/frontend:v1.0.0
+  simulator: vitorremesso/simulator:v0.2.0
+imagePullPolicy: Always
 
 rabbitmq:
   username: guest
@@ -27,7 +28,7 @@ frontend:
 
 simulator:
   enabled: true
-  gpxFile: trail_route.gpx
+  gpxFile: /app/trail_route.gpx
 
 storage:
   gpx:

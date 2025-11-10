@@ -22,7 +22,7 @@ spec:
           readOnly: true
         {{- if .Values.storage.gpx.enabled }}
         - name: gpx-volume
-          mountPath: /app/trail_route.gpx
+          mountPath: /gpx/trail_route.gpx
         {{- end }}
       volumes:
       - name: config
