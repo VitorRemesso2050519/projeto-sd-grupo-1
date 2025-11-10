@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: trail-frontend-config
-  namespace: {{ .Values.namespace }}
+  #namespace: {{ .Values.namespace }}
 data:
   config.js: |
     window.__BACKEND_WS_URL__ = "{{ .Values.frontend.wsUrl }}";

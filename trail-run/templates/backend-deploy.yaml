@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: trail-backend
-  namespace: {{ .Values.namespace }}
+  #namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ .Values.backend.replicaCount }}
   selector:

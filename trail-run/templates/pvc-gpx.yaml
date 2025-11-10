@@ -3,7 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: gpx-pvc
-  namespace: {{ .Values.namespace }}
+  #namespace: {{ .Values.namespace }}
 spec:
   accessModes: [ "ReadWriteMany" ]
   resources:

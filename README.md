@@ -12,8 +12,8 @@ Para o RabbitMQ:
 
 Para o Helm:
 - kubectl port-forward svc/trail-backend 8000:8000 -n trail-run
-- kubectl port-forward svc/trail-frontend 8000:8000 -n trail-run
-- http://127.0.0.1:8080/
+- kubectl port-forward svc/trail-frontend 8000:80 -n trail-run
+- http://localhost:8080
 
 1ªFASE: 12/11/2025 CI/CD AUTOMÁTICO COM A APLICAÇÃO BASE (10%):
 - Criar um repositório Github público e montar toda a pipeline de CI/CD para o cluster local no Docker Desktop.

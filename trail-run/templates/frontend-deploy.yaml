@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: trail-frontend
-  namespace: {{ .Values.namespace }}
+  #namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ .Values.frontend.replicaCount }}
   selector:
@@ -18,11 +18,11 @@ spec:
         - containerPort: {{ .Values.frontend.port }}
         volumeMounts:
         - name: config
-          mountPath: /etc/trail-frontend
+          mountPath: /usr/share/nginx/html/gpx/trail_route.gpx
           readOnly: true
         {{- if .Values.storage.gpx.enabled }}
         - name: gpx-volume
-          mountPath: /gpx/trail_route.gpx
+          mountPath: /app/trail_route.gpx
         {{- end }}
       volumes:
       - name: config

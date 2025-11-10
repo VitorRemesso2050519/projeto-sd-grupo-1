@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: trail-simulator
-  namespace: {{ .Values.namespace }}
+  #namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
@@ -24,15 +24,4 @@ spec:
           value: {{ .Values.rabbitmq.routingKey | quote }}
         - name: GPX_FILE_PATH
           value: {{ .Values.simulator.gpxFile | quote }}
-        volumeMounts:
-        {{- if .Values.storage.gpx.enabled }}
-        - name: gpx-volume
-          mountPath: /gpx
-        {{- end }}
-      volumes:
-      {{- if .Values.storage.gpx.enabled }}
-      - name: gpx-volume
-        persistentVolumeClaim:
-          claimName: gpx-pvc
-      {{- end }}
 {{- end }}
