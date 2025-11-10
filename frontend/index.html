@@ -29,7 +29,7 @@
         }).addTo(map);
 
         // Load the GPX file and center the map
-        const gpxFile = 'gpx/trail_route.gpx'; // The GPX file is served from the shared volume
+        const gpxFile = 'trail_route.gpx'; // The GPX file is served from the shared volume
         const gpxLayer = new L.GPX(gpxFile, {
             async: true, // Load the GPX file asynchronously
             marker_options: {

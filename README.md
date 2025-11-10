@@ -6,13 +6,16 @@ Para o ArgoCD:
 - kubectl -n argocd port-forward svc/argocd-server 8080:443
 - kubectl apply -n argocd -f k8s/trail-run-app.yaml
 
+kubectl -n argocd get secret argocd-initial-admin-secret `
+  -o jsonpath="{.data.password}" | % { [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($_)) }
+
 Para o RabbitMQ:
 - docker compose up --build
 - http://localhost:8081
 
 Para o Helm:
+- kubectl port-forward svc/trail-frontend 8080:80 -n trail-run
 - kubectl port-forward svc/trail-backend 8000:8000 -n trail-run
-- kubectl port-forward svc/trail-frontend 8000:80 -n trail-run
 - http://localhost:8080
 
 1ªFASE: 12/11/2025 CI/CD AUTOMÁTICO COM A APLICAÇÃO BASE (10%):
