@@ -21,11 +21,11 @@ spec:
               mountPath: /var/lib/rabbitmq
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "250m"
-            limits:
               memory: "512Mi"
               cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
           env:
             - name: RABBITMQ_DEFAULT_USER
               valueFrom: { secretKeyRef: { name: rabbitmq-auth, key: username } }
@@ -34,13 +34,13 @@ spec:
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "ping"]
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 5
           readinessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "ping"]
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 10
             timeoutSeconds: 5
       volumes:
