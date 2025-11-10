@@ -41,6 +41,13 @@ spec:
               mountPath: /app/trail_route.gpx
               subPath: trail_route.gpx
               readOnly: true
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
       volumes:
         - name: gpx-volume
           persistentVolumeClaim:
