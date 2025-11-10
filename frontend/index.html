@@ -26,24 +26,20 @@
         }).addTo(map);
 
         // Load the GPX file and center the map
-        const gpxFile = 'gpx/trail_route.gpx'; // The GPX file is served from the shared volume
+        const gpxFile = '/gpx/trail_route.gpx'; // O GPX deve estar acessível via HTTP no servidor do frontend
         const gpxLayer = new L.GPX(gpxFile, {
-            async: true, // Load the GPX file asynchronously
+            async: true, // Carrega o ficheiro GPX de forma assíncrona
             marker_options: {
-                startIconUrl: "./start.png", //'https://leafletjs.com/examples/custom-icons/leaf-green.png',
-                endIconUrl: "./finish.png", //'https://leafletjs.com/examples/custom-icons/leaf-red.png',
-                //shadowUrl: 'https://leafletjs.com/examples/custom-icons/leaf-shadow.png'
+                startIconUrl: "./start.png",
+                endIconUrl: "./finish.png",
             }
         }).on('loaded', function(e) {
-            // Fit the map to the bounds of the GPX route
+            // Ajusta o mapa aos limites da rota GPX
             map.fitBounds(e.target.getBounds());
         }).addTo(map);
 
         // Dictionary to store markers for each athlete
         const athleteMarkers = {};
-
-        // Connect to the WebSocket
-        const socket = new WebSocket("ws://localhost:8000/ws");
 
         const maleIcon = L.icon({
             iconUrl: "male.png", //"https://leafletjs.com/examples/custom-icons/leaf-blue.png", // Replace with a blue icon
@@ -65,47 +61,61 @@
             popupAnchor: [-3, -46]
         });
 
-        socket.onmessage = function (event) {
-            const data = JSON.parse(event.data);
+        // Função para ligar ao WebSocket com reconexão automática
+        function connectWebSocket() {
+            // Cria a ligação WebSocket usando o hostname atual
+            const socket = new WebSocket("ws://" + window.location.hostname + ":8000/ws");
 
-            // Extract athlete data
-            const athlete = data.athlete;
-            const gender = data.gender; // Get the gender from the event
-            const lat = data.location.latitude;
-            const lon = data.location.longitude;
-            
-            // Choose the icon based on gender
-            const icon = gender === "male" ? maleIcon : femaleIcon;
+            // Evento ao receber mensagem do backend
+            socket.onmessage = function (event) {
+                try {
+                    const data = JSON.parse(event.data);
 
-            console.log(`Updating marker for ${athlete} to [${lat}, ${lon}]`);
-            // Check if a marker already exists for this athlete
-            if (athlete in athleteMarkers) {
-                // Update the position of the existing marker
-                athleteMarkers[athlete].setLatLng([lat, lon]);
-            } else {
-                // Create a new marker for the athlete
-                const marker = L.marker([lat, lon], {icon: icon})
-                    /*icon: L.icon({
-                        iconUrl: "./marker_black.png", //"https://leafletjs.com/examples/custom-icons/leaf-orange.png",
-                        //shadowUrl: "https://leafletjs.com/examples/custom-icons/leaf-shadow.png",
-                        iconSize: [38, 75], // size of the icon
-                        //shadowSize: [50, 64], // size of the shadow
-                        iconAnchor: [22, 74], // point of the icon which will correspond to marker's location
-                        //shadowAnchor: [4, 62], // the same for the shadow
-                        popupAnchor: [-3, -56], // point from which the popup should open relative to the iconAnchor
-                    }),
-                })*/
-                    .addTo(map)
-                    .bindPopup(`<b>${athlete}</b>`);
+                    // Validação dos dados recebidos
+                    if (!data.athlete || !data.location || !data.location.latitude || !data.location.longitude || !data.gender) {
+                        console.warn("Mensagem WebSocket ignorada: formato inválido", data);
+                        return;
+                    }
 
-                // Store the marker in the dictionary
-                athleteMarkers[athlete] = marker;
-                
-            }
+                    // Extrai dados do atleta
+                    const athlete = data.athlete;
+                    const gender = data.gender;
+                    const lat = data.location.latitude;
+                    const lon = data.location.longitude;
 
-            // Center the map on the athlete's position
-            //map.setView([lat, lon], 15); // Adjust the zoom level as needed
-        };
+                    // Escolhe o ícone com base no género
+                    const icon = gender === "male" ? maleIcon : femaleIcon;
+
+                    // Atualiza o marcador se já existir, senão cria um novo
+                    if (athlete in athleteMarkers) {
+                        athleteMarkers[athlete].setLatLng([lat, lon]);
+                    } else {
+                        // Cria novo marcador para o atleta
+                        const marker = L.marker([lat, lon], {icon: icon})
+                            .addTo(map)
+                            .bindPopup(`<b>${athlete}</b>`);
+                        athleteMarkers[athlete] = marker;
+                    }
+                } catch (e) {
+                    // Erro ao processar mensagem recebida
+                    console.error("Erro ao processar mensagem WebSocket:", e);
+                }
+            };
+
+            // Evento ao perder ligação WebSocket
+            socket.onclose = function () {
+                console.warn("Ligação WebSocket perdida. A tentar reconectar...");
+                setTimeout(connectWebSocket, 2000);
+            };
+
+            // Evento de erro na ligação WebSocket
+            socket.onerror = function (e) {
+                console.error("Erro na ligação WebSocket:", e);
+                socket.close();
+            };
+        }
+        // Inicia a ligação WebSocket
+        connectWebSocket();
     </script>
 </body>
 </html>

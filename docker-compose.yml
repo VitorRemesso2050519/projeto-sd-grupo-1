@@ -1,50 +1,77 @@
-version: "3.8"
+version: "3.8"  # Versão do ficheiro docker-compose
 
 services:
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management  # Imagem oficial do RabbitMQ com interface de gestão
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"  # Porta padrão para comunicação AMQP
+      - "15672:15672"  # Porta da interface web de gestão
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: guest  # Utilizador padrão do RabbitMQ
+      RABBITMQ_DEFAULT_PASS: guest  # Palavra-passe padrão do RabbitMQ
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]  # Verifica se o RabbitMQ está saudável
+      interval: 5s  # Intervalo entre verificações
+      timeout: 3s  # Tempo limite para resposta
+      retries: 20  # Número de tentativas antes de considerar o serviço unhealthy
+      start_period: 5s  # Tempo inicial antes de começar as verificações
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq  # Volume para persistência dos dados do RabbitMQ
 
   backend:
-    build: ./backend
-    container_name: trail-backend
+    build: ./backend  # Constrói a imagem do backend a partir do directório local
+    container_name: trail-backend  # Nome do contentor para facilitar identificação
     environment:
-      RABBIT_URL: amqp://guest:guest@rabbitmq:5672/
-      RABBIT_EXCHANGE: events
-      RABBIT_QUEUE: events.gps
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672/  # URL de ligação ao RabbitMQ
+      RABBIT_EXCHANGE: events  # Exchange para publicação dos eventos
+      RABBIT_QUEUE: events.gps  # Fila para eventos de GPS
     depends_on:
       rabbitmq:
-        condition: service_healthy
+        condition: service_healthy  # Só inicia quando o RabbitMQ estiver saudável
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Porta de exposição do backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # Verifica se o backend está saudável
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped  # Reinicia o contentor automaticamente, excepto se for parado manualmente
 
   frontend:
-    build: ./frontend
-    container_name: trail-frontend
+    build: ./frontend  # Constrói a imagem do frontend a partir do directório local
+    container_name: trail-frontend  # Nome do contentor para facilitar identificação
     ports:
-      - "8081:80"
+      - "8081:80"  # Porta de exposição do frontend (host:contentor)
     depends_on:
-      - backend
+      - backend  # Só inicia quando o backend estiver disponível
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]  # Verifica se o frontend está saudável
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped  # Reinicia o contentor automaticamente, excepto se for parado manualmente
+    volumes:
+      - ./simulator/trail_route.gpx:/usr/share/nginx/html/gpx/trail_route.gpx  # Torna o ficheiro GPX acessível ao frontend
 
   simulator:
-    build: ./simulator
-    container_name: trail-simulator
+    build: ./simulator  # Constrói a imagem do simulador a partir do directório local
+    container_name: trail-simulator  # Nome do contentor para facilitar identificação
     environment:
-      RABBIT_URL: amqp://guest:guest@rabbitmq:5672/
-      RABBIT_EXCHANGE: events
-      RABBIT_ROUTING_KEY: gps.update
-      GPX_FILE_PATH: /app/trail_route.gpx
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672/  # URL de ligação ao RabbitMQ
+      RABBIT_EXCHANGE: events  # Exchange para publicação dos eventos
+      RABBIT_ROUTING_KEY: gps.update  # Routing key usada para os eventos de GPS
+      GPX_FILE_PATH: /app/trail_route.gpx  # Caminho do ficheiro GPX dentro do contentor
     depends_on:
       rabbitmq:
-        condition: service_healthy
+        condition: service_healthy  # Só inicia quando o RabbitMQ estiver saudável
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]  # Verifica se o simulador está saudável
+      interval: 10s  # Intervalo entre verificações
+      timeout: 5s  # Tempo limite para resposta
+      retries: 5  # Número de tentativas antes de considerar o serviço unhealthy
+    volumes:
+      - ./simulator/data:/app/data  # Volume para persistência de dados do simulador
+    restart: unless-stopped  # Reinicia o contentor automaticamente, excepto se for parado manualmente
+
+volumes:
+  rabbitmq-data:  # Volume nomeado para persistência dos dados do RabbitMQ
