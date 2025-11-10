@@ -4,10 +4,12 @@ FROM python:3.9-slim
 # Instalar dependências
 RUN pip install requests gpxpy pika
 
-# Copiar o código do simulador
+
+# Copiar o código do simulador e ficheiro GPX para o local correto
 WORKDIR /app
 COPY simulator.py /app/simulator.py
-COPY trail_route.gpx /app/trail_route.gpx
+RUN mkdir -p /app/data
+COPY trail_route.gpx /app/data/trail_route.gpx
 
 # Comando para iniciar o simulador
 CMD ["python", "simulator.py"]

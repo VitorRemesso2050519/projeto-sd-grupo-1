@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simulator-gpx
+  namespace: default
+  labels:
+    app: simulator
+    managed-by: uma
+    purpose: gpx-file
+    environment: dev
+    version: "1.0"
+data:
+  trail_route.gpx: |
+    <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+    <gpx creator="CompeGPS" version="1.1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd ... [truncated for brevity]
