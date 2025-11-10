@@ -8,7 +8,7 @@ spec:
   selector:
     app: backend
   ports:
-      port: 8000
+    - port: 8000
       targetPort: 8000
 # Service para expor o backend dentro do cluster
 # Porta 8000 para comunicação interna
