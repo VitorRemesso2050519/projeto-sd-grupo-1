@@ -6,6 +6,22 @@ Para o ArgoCD:
 - kubectl -n argocd port-forward svc/argocd-server 8080:443
 - kubectl apply -n argocd -f k8s/trail-run-app.yaml
 
+Para o Helm (necessário chocolatey):
+- choco install kubernetes-helm
+
+Para o RabbitMQ (depois de instalado Helm):
+- helm repo add bitnami https://charts.bitnami.com/bitnami
+- helm repo update
+- helm template rabbitmq bitnami/rabbitmq -f k8s/helm/rabbitmq/values.yaml --debug
+- helm install rabbitmq bitnami/rabbitmq -n rabbitmq --create-namespace -f k8s/helm/rabbitmq/values.yaml
+- Para aceder ao port do RabbitMQ AMQP:
+    - echo "URL : amqp://127.0.0.1:5672/"
+    - kubectl port-forward --namespace rabbitmq svc/rabbitmq 5672:5672
+- Para aceder à interface do RabbitMQ Management:
+    - echo "URL : http://127.0.0.1:15672/"
+    - kubectl port-forward --namespace rabbitmq svc/rabbitmq 15672:15672    
+
+
 1ªFASE: 12/11/2025 CI/CD AUTOMÁTICO COM A APLICAÇÃO BASE (10%):
 - Criar um repositório Github público e montar toda a pipeline de CI/CD para o cluster local no Docker Desktop.
 - Configurar Github Actions para atualizações no código e envio de imagens para o DockerHub.
