@@ -1,8 +1,8 @@
 images:
   rabbitmq: rabbitmq:3-management
-  backend: vitorremesso/backend:v1.0.0
-  frontend: vitorremesso/frontend:v1.0.0
-  simulator: vitorremesso/simulator:v0.2.0
+  backend: vitorremesso/backend:latest
+  frontend: vitorremesso/frontend:latest
+  simulator: vitorremesso/simulator:latest
 imagePullPolicy: Always
 
 rabbitmq:
