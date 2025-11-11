@@ -10,6 +10,9 @@ on:
       - 'frontend/**'
       - 'k8s/**'
 
+permissions:
+  contents: write
+
 jobs:
   # =================================================================
   # JOB 1: BACKEND (Consumidor)
