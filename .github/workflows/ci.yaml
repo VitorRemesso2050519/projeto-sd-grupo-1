@@ -45,12 +45,15 @@ jobs:
           sed -i "s|image: ${{ secrets.DOCKER_USERNAME }}/backend:.*|image: ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.TAG }}|g" k8s/backend/back-deployment.yaml
       
       - name: 6. Commit and push backend manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "marco.ascensao@programacao.org"
           git config --global user.name "mpfa"
+          git pull --rebase
           git add k8s/backend/back-deployment.yaml
           git commit -m "Update backend image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
-          git push
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
       
 
   # =================================================================
@@ -88,12 +91,15 @@ jobs:
           sed -i "s|image: ${{ secrets.DOCKER_USERNAME }}/simulator:.*|image: ${{ secrets.DOCKER_USERNAME }}/simulator:${{ steps.vars.outputs.TAG }}|g" k8s/simulator/sim-deployment.yaml
       
       - name: 6. Commit and push simulator manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "marco.ascensao@programacao.org"
           git config --global user.name "mpfa"
+          git pull --rebase
           git add k8s/simulator/sim-deployment.yaml
           git commit -m "Update simulator image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
-          git push
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
 
   # =================================================================
   # JOB 3: FRONTEND (UI)
@@ -130,9 +136,12 @@ jobs:
           sed -i "s|image: ${{ secrets.DOCKER_USERNAME }}/frontend:.*|image: ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.TAG }}|g" k8s/frontend/front-deployment.yaml
       
       - name: 6. Commit and push frontend manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.email "marco.ascensao@programacao.org"
           git config --global user.name "mpfa"
+          git pull --rebase
           git add k8s/frontend/front-deployment.yaml
           git commit -m "Update frontend image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
-          git push
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
