@@ -7,7 +7,8 @@ RUN pip install requests gpxpy pika
 # Copiar o código do simulador
 WORKDIR /app
 COPY simulator.py /app/simulator.py
-COPY trail_route.gpx /app/trail_route.gpx
+RUN mkdir -p /app/data
+COPY trail_route.gpx /app/data/trail_route.gpx
 
 # Comando para iniciar o simulador
 CMD ["python", "simulator.py"]

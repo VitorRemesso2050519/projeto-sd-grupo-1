@@ -35,7 +35,7 @@ spec:
             - name: RABBIT_ROUTING_KEY
               value: gps.update
             - name: GPX_FILE_PATH
-              value: /app/trail_route.gpx
+              value: /app/data/trail_route.gpx
           volumeMounts:
             - name: gpx-volume
               mountPath: /app/trail_route.gpx

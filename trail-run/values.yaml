@@ -28,7 +28,7 @@ frontend:
 
 simulator:
   enabled: true
-  gpxFile: /app/trail_route.gpx
+  gpxFile: /app/data/trail_route.gpx
 
 storage:
   gpx:
