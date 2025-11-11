@@ -8,7 +8,7 @@ on:
       - 'backend/**'
       - 'simulator/**'
       - 'frontend/**'
-      - 'k8s/**'
+    #  - 'k8s/**'
 
 permissions:
   contents: write
