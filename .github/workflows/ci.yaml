@@ -46,8 +46,8 @@ jobs:
       
       - name: 6. Commit and push backend manifest
         run: |
-          git config --global user.email "ci@github.com"
-          git config --global user.name "CI Bot"
+          git config --global user.email "marco.ascensao@programacao.org"
+          git config --global user.name "mpfa"
           git add k8s/backend/back-deployment.yaml
           git commit -m "Update backend image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
           git push
@@ -89,8 +89,8 @@ jobs:
       
       - name: 6. Commit and push simulator manifest
         run: |
-          git config --global user.email "ci@github.com"
-          git config --global user.name "CI Bot"
+          git config --global user.email "marco.ascensao@programacao.org"
+          git config --global user.name "mpfa"
           git add k8s/simulator/sim-deployment.yaml
           git commit -m "Update simulator image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
           git push
@@ -131,8 +131,8 @@ jobs:
       
       - name: 6. Commit and push frontend manifest
         run: |
-          git config --global user.email "ci@github.com"
-          git config --global user.name "CI Bot"
+          git config --global user.email "marco.ascensao@programacao.org"
+          git config --global user.name "mpfa"
           git add k8s/frontend/front-deployment.yaml
           git commit -m "Update frontend image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
           git push
