@@ -3,7 +3,7 @@ name: Pipeline CI/CD
 on:
   push:
     branches:
-      - main
+      - joao
     paths:
       - 'backend/**'
       - 'simulator/**'
