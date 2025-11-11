@@ -11,7 +11,7 @@ spec:
     path: trail-run
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: trail-run
   syncPolicy:
     automated:
       prune: true
