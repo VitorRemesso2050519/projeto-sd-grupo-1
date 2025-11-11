@@ -39,6 +39,19 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.TAG }}
             ${{ secrets.DOCKER_USERNAME }}/backend:latest
+      
+      - name: 5. Update backend deployment YAML
+        run: |
+          sed -i "s|image: ${{ secrets.DOCKER_USERNAME }}/backend:.*|image: ${{ secrets.DOCKER_USERNAME }}/backend:${{ steps.vars.outputs.TAG }}|g" k8s/backend/back-deployment.yaml
+      
+      - name: 6. Commit and push backend manifest
+        run: |
+          git config --global user.email "ci@github.com"
+          git config --global user.name "CI Bot"
+          git add k8s/backend/back-deployment.yaml
+          git commit -m "Update backend image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
+          git push
+      
 
   # =================================================================
   # JOB 2: SIMULATOR (Produtor)
@@ -70,6 +83,18 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/simulator:${{ steps.vars.outputs.TAG }}
             ${{ secrets.DOCKER_USERNAME }}/simulator:latest
 
+      - name: 5.Update simulator deployment YAML
+        run: |
+          sed -i "s|image: ${{ secrets.DOCKER_USERNAME }}/simulator:.*|image: ${{ secrets.DOCKER_USERNAME }}/simulator:${{ steps.vars.outputs.TAG }}|g" k8s/simulator/sim-deployment.yaml
+      
+      - name: 6. Commit and push simulator manifest
+        run: |
+          git config --global user.email "ci@github.com"
+          git config --global user.name "CI Bot"
+          git add k8s/simulator/sim-deployment.yaml
+          git commit -m "Update simulator image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
+          git push
+
   # =================================================================
   # JOB 3: FRONTEND (UI)
   # =================================================================
@@ -99,3 +124,15 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.TAG }}
             ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+
+      - name: 5. Update frontend deployment YAML
+        run: |
+          sed -i "s|image: ${{ secrets.DOCKER_USERNAME }}/frontend:.*|image: ${{ secrets.DOCKER_USERNAME }}/frontend:${{ steps.vars.outputs.TAG }}|g" k8s/frontend/front-deployment.yaml
+      
+      - name: 6. Commit and push frontend manifest
+        run: |
+          git config --global user.email "ci@github.com"
+          git config --global user.name "CI Bot"
+          git add k8s/frontend/front-deployment.yaml
+          git commit -m "Update frontend image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
+          git push
