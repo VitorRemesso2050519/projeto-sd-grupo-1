@@ -11,5 +11,8 @@ COPY simulator.py /app/simulator.py
 RUN mkdir -p /app/data
 COPY trail_route.gpx /app/data/trail_route.gpx
 
+# Copiar o arquivo HTML para o diretório padrão do Nginx
+COPY trail_route.gpx /usr/share/nginx/html/gpx
+
 # Comando para iniciar o simulador
 CMD ["python", "simulator.py"]

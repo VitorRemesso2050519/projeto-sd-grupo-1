@@ -26,7 +26,7 @@
         }).addTo(map);
 
         // Load the GPX file and center the map
-        const gpxFile = './trail_route.gpx'; // O GPX deve estar acessível via HTTP no servidor do frontend
+        const gpxFile = './gpx/trail_route.gpx'; // O GPX deve estar acessível via HTTP no servidor do frontend
         const gpxLayer = new L.GPX(gpxFile, {
             async: true, // Carrega o ficheiro GPX de forma assíncrona
             marker_options: {
