@@ -50,9 +50,9 @@ jobs:
         run: |
           git config --global user.email "marco.ascensao@programacao.org"
           git config --global user.name "mpfa"
-          git pull --rebase
           git add k8s/backend/back-deployment.yaml
           git commit -m "Update backend image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
+          git pull --rebase
           git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
       
 
@@ -96,9 +96,9 @@ jobs:
         run: |
           git config --global user.email "marco.ascensao@programacao.org"
           git config --global user.name "mpfa"
-          git pull --rebase
           git add k8s/simulator/sim-deployment.yaml
           git commit -m "Update simulator image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
+          git pull --rebase
           git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
 
   # =================================================================
@@ -141,7 +141,7 @@ jobs:
         run: |
           git config --global user.email "marco.ascensao@programacao.org"
           git config --global user.name "mpfa"
-          git pull --rebase
           git add k8s/frontend/front-deployment.yaml
           git commit -m "Update frontend image tag to ${{ steps.vars.outputs.TAG }} [ci skip]" || echo "No changes to commit"
+          git pull --rebase
           git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
