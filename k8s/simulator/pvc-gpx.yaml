@@ -4,6 +4,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: pvc-gpx
+  namespace: argocd
 spec:
   accessModes:
     - ReadWriteMany        # Requer suporte RWX (NFS, StorageClass com RWX)
