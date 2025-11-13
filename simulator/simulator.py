@@ -12,7 +12,7 @@ DEBUG = os.getenv("SIM_DEBUG", "0") == "1"  # Ativa modo de depuração se SIM_D
 RABBIT_URL = os.getenv("RABBIT_URL", "amqp://guest:guest@rabbitmq:5672/%2F")  # URL de ligação ao RabbitMQ
 RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")  # Exchange para publicação dos eventos
 RABBIT_ROUTING_KEY = os.getenv("RABBIT_ROUTING_KEY", "gps.update")  # Routing key para eventos de GPS
-GPX_FILE_PATH = os.getenv("GPX_FILE_PATH", "trail_route.gpx")  # Caminho do ficheiro GPX
+GPX_FILE_PATH = os.getenv("GPX_FILE_PATH", "ADN_Race2025.gpx")  # Caminho do ficheiro GPX
 PUBLISH_INTERVAL = float(os.getenv("SIM_PUBLISH_INTERVAL", "1"))  # Intervalo de publicação (segundos)
 
 # Lista de atletas simulados
