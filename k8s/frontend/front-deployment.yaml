@@ -40,14 +40,6 @@ spec:
             limits:
               cpu: "250m"
               memory: "256Mi"
-          volumeMounts:
-            - name: gpx-volume
-              mountPath: /usr/share/nginx/html/gpx
-              readOnly: true
-      volumes:
-        - name: gpx-volume
-          persistentVolumeClaim:
-            claimName: pvc-gpx
 # Deployment do serviço frontend
 # Utiliza readiness e liveness probes para garantir disponibilidade
 # Volume para ficheiro GPX via PVC
