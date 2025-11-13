@@ -21,31 +21,61 @@
         }
         .navbar {
             height: 56px;
-            background: #2c3e50;
+            background: linear-gradient(90deg,#243447,#2c3e50);
             color: #fff;
             display: flex;
             align-items: center;
             padding: 0 16px;
             box-shadow: 0 1px 4px rgba(0,0,0,0.1);
             z-index: 1000;
+            gap: 12px;
         }
         .navbar .title {
             font-size: 1.1rem;
             font-weight: 600;
+            letter-spacing: 0.2px;
         }
         .navbar .actions {
             margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .navbar select, .navbar button {
+            font-size: 0.95rem;
+            color: #2b3942;
+            background: #fff;
+            border: 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            outline: none;
+            transition: transform .08s ease, box-shadow .12s ease;
+        }
+        .navbar select {
+            min-width: 170px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-right: 38px; /* espaço para caret */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%232b3942' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            cursor: pointer;
+        }
+        .navbar select:focus, .navbar button:focus {
+            box-shadow: 0 6px 18px rgba(52,152,219,0.18);
+            transform: translateY(-1px);
         }
         .navbar button {
-            background: #3498db;
+            background: linear-gradient(180deg,#3498db,#2b85d6);
             color: #fff;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.95rem;
+            padding: 8px 14px;
+            border-radius: 8px;
         }
-        .navbar button:hover { background: #2980b9; }
+        .navbar button:hover {
+            transform: translateY(-2px);
+        }
 
         #map {
             flex: 1; /* preenche o espaço restante da viewport */
@@ -58,7 +88,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="title">Trail Run — Live Visualization</div>
+        <div class="title">Trail Run — Simulation</div>
         <div class="actions">
             <!-- Seletor de corrida (placeholder para suporte futuro do backend) -->
             <select id="race-select" title="Pick a race" style="margin-right:8px;">
@@ -88,7 +118,7 @@
         }).addTo(map);
 
         // Carregar o ficheiro GPX e centrar o mapa
-        const gpxFile = './ADN_Race2025.gpx'; // O GPX deve estar acessível via HTTP no servidor do frontend
+        const gpxFile = './trail_route.gpx'; // O GPX deve estar acessível via HTTP no servidor do frontend
         const gpxLayer = new L.GPX(gpxFile, {
             async: true, // Carrega o ficheiro GPX de forma assíncrona
             marker_options: {

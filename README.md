@@ -6,9 +6,15 @@ Para o ArgoCD:
 - kubectl -n argocd port-forward svc/argocd-server 8080:443
 - kubectl apply -n argocd -f k8s/trail-run-app.yaml
 
-Para o RabbitMQ:
-- docker compose up --build
-- http://localhost:8081
+Para o Frontend:
+- kubectl -n argocd port-forward svc/frontend 8081:80
+
+Para o Backend:
+- kubectl -n argocd port-forward svc/backend 8000:8000
+
+Para o RabbitMQ (AMQP e management UI respetivamente):
+- kubectl -n argocd port-forward svc/rabbitmq 5672:5672
+- kubectl -n argocd port-forward svc/rabbitmq 15672:15672
 
 1ªFASE: 12/11/2025 CI/CD AUTOMÁTICO COM A APLICAÇÃO BASE (10%):
 - Criar um repositório Github público e montar toda a pipeline de CI/CD para o cluster local no Docker Desktop.
