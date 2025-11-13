@@ -21,7 +21,7 @@ ATHLETES = [
     {"name": "Jane Smith", "gender": "female"},
     {"name": "Alice Johnson", "gender": "female"},
     {"name": "Bob Brown", "gender": "male"},
-    {"name": "XPTO", "gender": "male"},
+    {"name": "Michael Phelps", "gender": "male"},
 ]
 SPEED_VARIATION = (6, 12)  # Variação da velocidade dos atletas (km/h)
 

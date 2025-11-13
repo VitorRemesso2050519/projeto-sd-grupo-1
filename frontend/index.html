@@ -48,11 +48,11 @@
         .navbar button:hover { background: #2980b9; }
 
         #map {
-            flex: 1; /* fills remaining viewport space */
-            min-height: 0; /* avoids overflow in some browsers */
+            flex: 1; /* preenche o espaço restante da viewport */
+            min-height: 0; /* evita overflow em alguns navegadores */
         }
 
-        /* small adjustments for GPX popups/icons if needed */
+        /* pequenos ajustes para popups/ícones GPX se necessário */
         .gpx-info { font-size: 0.9rem; }
     </style>
 </head>
@@ -60,23 +60,34 @@
     <nav class="navbar">
         <div class="title">Trail Run — Live Visualization</div>
         <div class="actions">
-            <button id="zoom-fit" title="Fit map to route">Fit Route</button>
+            <!-- Seletor de corrida (placeholder para suporte futuro do backend) -->
+            <select id="race-select" title="Pick a race" style="margin-right:8px;">
+                <option value="">Pick race...</option>
+                <!-- futuras corridas podem ser adicionadas aqui dinamicamente -->
+            </select>
+
+            <!-- Seletor de corredor + zoom -->
+            <select id="runner-select" title="Pick a runner" style="min-width:160px; margin-right:8px;">
+                <option value="">Pick runner...</option>
+            </select>
+            <button id="zoom-runner" title="Zoom to selected runner">Zoom</button>
+            <button id="zoom-fit" title="Fit map to route" style="margin-left:8px;">Fit Route</button>
         </div>
     </nav>
 
     <div id="map"></div>
 
     <script>
-        // Create the Leaflet map
-        const map = L.map('map').setView([0, 0], 13); // Initial view (will be updated)
+        // Criar o mapa Leaflet
+        const map = L.map('map').setView([0, 0], 13); // Vista inicial (será atualizada)
 
-        // Add OpenStreetMap tiles
+        // Adicionar OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Load the GPX file and center the map
+        // Carregar o ficheiro GPX e centrar o mapa
         const gpxFile = './ADN_Race2025.gpx'; // O GPX deve estar acessível via HTTP no servidor do frontend
         const gpxLayer = new L.GPX(gpxFile, {
             async: true, // Carrega o ficheiro GPX de forma assíncrona
@@ -89,7 +100,7 @@
             map.fitBounds(e.target.getBounds());
         }).addTo(map);
 
-        // Fit button: re-center to GPX bounds if available
+        // Botão de ajuste: recentralizar para os limites do GPX se disponível
         document.getElementById('zoom-fit').addEventListener('click', () => {
             try {
                 const bounds = gpxLayer.getBounds && gpxLayer.getBounds();
@@ -105,7 +116,7 @@
             }
         });
 
-        // Dictionary to store markers for each athlete
+        // Dicionário para armazenar marcadores de cada atleta
         const athleteMarkers = {};
 
         const maleIcon = L.icon({
@@ -120,6 +131,43 @@
             iconSize: [28, 65],
             iconAnchor: [12, 64],
             popupAnchor: [-3, -46]
+        });
+
+        // Selecionar runners e zoom
+        const runnerSelect = document.getElementById('runner-select');
+        const zoomRunnerBtn = document.getElementById('zoom-runner');
+
+        function addRunnerOption(name) {
+            // Para evitar duplicados
+            if (![...runnerSelect.options].some(o => o.value === name)) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                runnerSelect.appendChild(opt);
+            }
+        }
+
+        function zoomToRunner(name, zoomLevel = 16) {
+            const marker = athleteMarkers[name];
+            if (!marker) {
+                console.warn('Runner not found on map:', name);
+                return;
+            }
+            const latlng = marker.getLatLng();
+            map.setView(latlng, zoomLevel, {animate: true});
+            marker.openPopup && marker.openPopup();
+        }
+
+        // Comportamento do botão de zoom
+        zoomRunnerBtn.addEventListener('click', () => {
+            const selected = runnerSelect.value;
+            if (selected) zoomToRunner(selected);
+        });
+
+        // Opcional: auto-zoom ao selecionar um corredor no dropdown
+        runnerSelect.addEventListener('change', (e) => {
+            const name = e.target.value;
+            if (name) zoomToRunner(name);
         });
 
         // Função para ligar ao WebSocket com reconexão automática
@@ -149,13 +197,24 @@
 
                     // Atualiza o marcador se já existir, senão cria um novo
                     if (athlete in athleteMarkers) {
-                        athleteMarkers[athlete].setLatLng([lat, lon]);
+                        const m = athleteMarkers[athlete];
+                        m.setLatLng([lat, lon]);
+                        // If currently selected runner, pan to their new position
+                        if (runnerSelect.value === athlete) {
+                            map.panTo(m.getLatLng(), {animate: true});
+                        }
                     } else {
                         // Cria novo marcador para o atleta
                         const marker = L.marker([lat, lon], {icon: icon})
                             .addTo(map)
                             .bindPopup(`<b>${athlete}</b>`);
+                        // clicking a marker selects it in the dropdown and zooms
+                        marker.on('click', () => {
+                            runnerSelect.value = athlete;
+                            zoomToRunner(athlete);
+                        });
                         athleteMarkers[athlete] = marker;
+                        addRunnerOption(athlete);
                     }
                 } catch (e) {
                     // Erro ao processar mensagem recebida
