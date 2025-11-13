@@ -50,4 +50,4 @@ spec:
 # Deployment do serviço frontend
 # Utiliza readiness e liveness probes para garantir disponibilidade
 # Volume para ficheiro GPX via PVC
-# Limites de recursos definidos
+# Limites de recursos definidos.
