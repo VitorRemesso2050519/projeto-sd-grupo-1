@@ -41,8 +41,8 @@ spec:
               cpu: "250m"
               memory: "256Mi"
             volumeMounts:
-            - name: gpx-volume
-              mountPath: /usr/share/nginx/html/gpx
+              - name: gpx-volume
+                mountPath: /usr/share/nginx/html/gpx
       volumes:
         - name: gpx-volume
           persistentVolumeClaim:
