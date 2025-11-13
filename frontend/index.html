@@ -8,13 +8,64 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.5.1/gpx.min.js"></script>
     <style>
-        #map {
-            height: 100vh;
+        /* Layout: navbar + map filling rest of viewport */
+        html, body {
+            height: 100%;
+            margin: 0;
         }
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        .navbar {
+            height: 56px;
+            background: #2c3e50;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .navbar .title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .navbar .actions {
+            margin-left: auto;
+        }
+        .navbar button {
+            background: #3498db;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        .navbar button:hover { background: #2980b9; }
+
+        #map {
+            flex: 1; /* fills remaining viewport space */
+            min-height: 0; /* avoids overflow in some browsers */
+        }
+
+        /* small adjustments for GPX popups/icons if needed */
+        .gpx-info { font-size: 0.9rem; }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="title">Trail Run — Live Visualization</div>
+        <div class="actions">
+            <button id="zoom-fit" title="Fit map to route">Fit Route</button>
+        </div>
+    </nav>
+
     <div id="map"></div>
+
     <script>
         // Create the Leaflet map
         const map = L.map('map').setView([0, 0], 13); // Initial view (will be updated)
@@ -38,26 +89,36 @@
             map.fitBounds(e.target.getBounds());
         }).addTo(map);
 
+        // Fit button: re-center to GPX bounds if available
+        document.getElementById('zoom-fit').addEventListener('click', () => {
+            try {
+                const bounds = gpxLayer.getBounds && gpxLayer.getBounds();
+                if (bounds && bounds.isValid && bounds.isValid()) {
+                    map.fitBounds(bounds);
+                } else if (bounds) {
+                    map.fitBounds(bounds);
+                } else {
+                    console.warn('GPX bounds not available yet.');
+                }
+            } catch (err) {
+                console.error('Unable to fit map to route:', err);
+            }
+        });
+
         // Dictionary to store markers for each athlete
         const athleteMarkers = {};
 
         const maleIcon = L.icon({
-            iconUrl: "male.png", //"https://leafletjs.com/examples/custom-icons/leaf-blue.png", // Replace with a blue icon
-          //  shadowUrl: "https://leafletjs.com/examples/custom-icons/leaf-shadow.png",
+            iconUrl: "male.png",
             iconSize: [28, 65],
-          //  shadowSize: [50, 64],
             iconAnchor: [12, 64],
-          //  shadowAnchor: [4, 62],
             popupAnchor: [-3, -46]
         });
 
         const femaleIcon = L.icon({
-            iconUrl: "female.png", //"https://leafletjs.com/examples/custom-icons/leaf-pink.png", // Replace with a pink icon
-         //   shadowUrl: "https://leafletjs.com/examples/custom-icons/leaf-shadow.png",
+            iconUrl: "female.png",
             iconSize: [28, 65],
-           // shadowSize: [50, 64],
             iconAnchor: [12, 64],
-           // shadowAnchor: [4, 62],
             popupAnchor: [-3, -46]
         });
 
