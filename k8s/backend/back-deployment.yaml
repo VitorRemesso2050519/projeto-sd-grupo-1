@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: vitorremesso/backend:82969b8
+          image: vitorremesso/backend:c412d45
           ports:
             - containerPort: 8000
           env:
