@@ -6,6 +6,12 @@ Para o ArgoCD:
 - kubectl -n argocd port-forward svc/argocd-server 8080:443
 - kubectl apply -n argocd -f k8s/trail-run-app.yaml
 
+Elimina Replicas (RS) vazias (sem pods associados)
+- kubectl get rs -n argocd | Select-String " 0 " | ForEach-Object {
+>>     $rs = $_.ToString().Split(" ")[0]
+>>     kubectl delete rs $rs -n argocd
+>> }
+
 Para o Frontend:
 - kubectl -n argocd port-forward svc/frontend 8081:80
 
