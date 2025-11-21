@@ -7,11 +7,11 @@ spec:
   project: default
   source:
     repoURL: "https://github.com/VitorRemesso2050519/projeto-sd-grupo-1"
-    targetRevision: HEAD
+    targetRevision: joao
     path: k8s
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: trail-run
   syncPolicy:
     automated:
       prune: true
