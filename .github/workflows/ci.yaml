@@ -15,10 +15,37 @@ permissions:
 
 jobs:
   # =================================================================
+  # JOB 0: CHANGES DETECTION
+  # =================================================================
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      simulator: ${{ steps.filter.outputs.simulator }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            simulator:
+              - 'simulator/**'
+            frontend:
+              - 'frontend/**'
+
+  # =================================================================
   # JOB 1: BACKEND (Consumidor)
   # =================================================================
   build_backend:
     name: Push backend image to Docker Hub
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    concurrency:
+      group: ci-${{ github.ref }}-backend
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: 1. Checkout do Código
@@ -63,8 +90,12 @@ jobs:
   # JOB 2: SIMULATOR (Produtor)
   # =================================================================
   build_simulator:
-    needs: build_backend
     name: Push simulator image to Docker Hub
+    needs: changes
+    if: ${{ needs.changes.outputs.simulator == 'true' }}
+    concurrency:
+      group: ci-${{ github.ref }}-simulator
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: 1. Checkout do Código
@@ -108,8 +139,12 @@ jobs:
   # JOB 3: FRONTEND (UI)
   # =================================================================
   build_frontend:
-    needs: build_simulator
     name: Push frontend image to Docker Hub
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    concurrency:
+      group: ci-${{ github.ref }}-frontend
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: 1. Checkout do Código
