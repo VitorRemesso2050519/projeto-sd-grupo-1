@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: trail-run-app
-  namespace: argocd
+  namespace: grupo1
 spec:
   project: default
   source:
@@ -11,7 +11,7 @@ spec:
     path: k8s
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: grupo1
   syncPolicy:
     automated:
       prune: true
