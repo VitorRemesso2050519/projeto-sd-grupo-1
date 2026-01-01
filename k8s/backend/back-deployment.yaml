@@ -19,7 +19,7 @@ spec:
         - name: backend
           image: vitorremesso/backend:4be6791
           ports:
-            - containerPort: 8001
+            - containerPort: 8000
           env:
             - name: RABBIT_USER
               valueFrom: 
@@ -47,13 +47,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 8001
+              port: 8000
             initialDelaySeconds: 10
             periodSeconds: 30
           readinessProbe:
             httpGet:
               path: /health
-              port: 8001
+              port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10
 # Deployment do serviço backend
