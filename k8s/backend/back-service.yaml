@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: backend
-  namespace: argocd
+  namespace: grupo1
   labels:
     app: backend
 spec:
@@ -14,4 +14,4 @@ spec:
       protocol: TCP
       nodePort: 30071
 # Service para expor o backend dentro do cluster
-# Porta 8000 para comunicação interna
+# Porta 8001 para comunicação interna
