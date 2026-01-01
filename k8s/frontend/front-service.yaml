@@ -10,10 +10,10 @@ spec:
   selector:
     app: frontend
   ports:
-    - port: 80
-      targetPort: 80
+    - port: 81
+      targetPort: 81
       protocol: TCP
       nodePort: 30081
 # Service para expor o frontend externamente
 # Tipo NodePort para acesso fora do cluster
-# Porta 30101 mapeada para 80
+# Porta 30081 mapeada para 81

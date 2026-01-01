@@ -19,18 +19,18 @@ spec:
         - name: frontend
           image: vitorremesso/frontend:8ef3692
           ports:
-            - containerPort: 80
+            - containerPort: 81
           readinessProbe:
             httpGet:
               path: /
-              port: 80
+              port: 81
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 2
           livenessProbe:
             httpGet:
               path: /
-              port: 80
+              port: 81
             initialDelaySeconds: 10
             periodSeconds: 30
           resources:

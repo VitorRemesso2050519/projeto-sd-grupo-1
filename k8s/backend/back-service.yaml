@@ -9,8 +9,8 @@ spec:
   selector:
     app: backend
   ports:
-    - port: 8000
-      targetPort: 8000
+    - port: 8001
+      targetPort: 8001
       protocol: TCP
       nodePort: 30071
 # Service para expor o backend dentro do cluster

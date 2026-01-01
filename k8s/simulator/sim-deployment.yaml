@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: simulator
-          image: vitorremesso/simulator:4be6791
+          image: vitorremesso/simulator:d69e374
           env:
             - name: RABBIT_USER
               valueFrom: 
@@ -30,7 +30,7 @@ spec:
                   name: rabbitmq-auth
                   key: password
             - name: RABBIT_URL
-              value: amqp://$(RABBIT_USER):$(RABBIT_PASS)@rabbitmq.rabbitmq-system:5672/%2F
+              value: amqp://$(RABBIT_USER):$(RABBIT_PASS)@rabbitmq-system.svc.cluster.local:5672/%2F
             - name: RABBIT_EXCHANGE
               value: events
             - name: RABBIT_ROUTING_KEY
