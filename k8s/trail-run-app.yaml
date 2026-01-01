@@ -4,7 +4,7 @@ metadata:
   name: trail-run-app
   namespace: grupo1
 spec:
-  project: default
+  project: grupo1
   source:
     repoURL: "https://github.com/VitorRemesso2050519/projeto-sd-grupo-1"
     targetRevision: HEAD
