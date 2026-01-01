@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: grupo1
+  namespace: argocd
+spec:
+  description: Trail Run App - Grupo 1 Project
+  sourceRepos:
+    - 'https://github.com/VitorRemesso2050519/projeto-sd-grupo-1'
+    - '*'  # Allow any repo if needed
+  destinations:
+    - namespace: 'grupo1'
+      server: https://kubernetes.default.svc
+    - namespace: 'rabbitmq-system'
+      server: https://kubernetes.default.svc
+  clusterResourceBlacklist:
+    - group: '*'
+      kind: ResourceQuota
