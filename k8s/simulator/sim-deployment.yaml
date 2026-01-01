@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: simulator
-  namespace: argocd
+  namespace: grupo1
   labels:
     app: simulator
 spec:
@@ -30,7 +30,7 @@ spec:
                   name: rabbitmq-auth
                   key: password
             - name: RABBIT_URL
-              value: amqp://$(RABBIT_USER):$(RABBIT_PASS)@rabbitmq:5672/%2F
+              value: amqp://$(RABBIT_USER):$(RABBIT_PASS)@rabbitmq.rabbitmq-system:5672/%2F
             - name: RABBIT_EXCHANGE
               value: events
             - name: RABBIT_ROUTING_KEY
