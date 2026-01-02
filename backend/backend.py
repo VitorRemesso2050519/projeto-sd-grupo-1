@@ -8,7 +8,7 @@ from typing import List
 import aio_pika
 
 # --- Configuração (pode ser sobrescrita por variáveis de ambiente) ---
-RABBIT_URL = os.getenv("RABBIT_URL", "amqp://guest:guest@rabbitmq.rabbitmq-system:5672/")  # URL de ligação ao RabbitMQ
+RABBIT_URL = os.getenv("RABBIT_URL", "amqp://grupo1:a1s2d3f4g5h6@rabbitmq-system.svc.cluster.local:5672/")  # URL de ligação ao RabbitMQ
 RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")  # Exchange para publicação dos eventos
 RABBIT_QUEUE = os.getenv("RABBIT_QUEUE", "events.gps")  # Fila para eventos de GPS
 
