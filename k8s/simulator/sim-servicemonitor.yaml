@@ -1,4 +1,3 @@
-// filepath: k8s/simulator/simulator-servicemonitor.yaml
 apiVersion: v1
 kind: Service
 metadata:

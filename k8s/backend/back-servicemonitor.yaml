@@ -1,4 +1,3 @@
-// filepath: k8s/backend/backend-servicemonitor.yaml
 apiVersion: v1
 kind: Service
 metadata:
