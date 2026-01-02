@@ -19,7 +19,7 @@ spec:
         - name: simulator
           image: vitorremesso/simulator:cfd49c6
           ports:
-            - containerPort: 8081
+            - containerPort: 8080
               name: metrics
           env:
             - name: RABBIT_USER
