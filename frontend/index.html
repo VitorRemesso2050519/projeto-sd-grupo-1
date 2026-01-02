@@ -223,7 +223,7 @@
         // Função para ligar ao WebSocket com reconexão automática
         function connectWebSocket() {
             // Cria a ligação WebSocket usando o hostname atual
-            const socket = new WebSocket("ws://" + window.location.hostname + ":8001/ws");
+            const socket = new WebSocket("ws://" + window.location.hostname + ":30071/ws");
 
             // Evento ao receber mensagem do backend
             socket.onmessage = function (event) {
