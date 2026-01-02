@@ -18,6 +18,9 @@ spec:
       containers:
         - name: simulator
           image: vitorremesso/simulator:43a91fb
+          ports:
+            - containerPort: 8081
+              name: metrics
           env:
             - name: RABBIT_USER
               valueFrom: 

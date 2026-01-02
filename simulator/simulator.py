@@ -6,6 +6,7 @@ import json
 import os
 from threading import Thread
 import pika
+from prometheus_client import Counter, Gauge, start_http_server
 
 # --- Configuração (pode ser sobrescrita por variáveis de ambiente) ---
 DEBUG = os.getenv("SIM_DEBUG", "0") == "1"  # Ativa modo de depuração se SIM_DEBUG=1
@@ -14,6 +15,26 @@ RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")  # Exchange para public
 RABBIT_ROUTING_KEY = os.getenv("RABBIT_ROUTING_KEY", "gps.update")  # Routing key para eventos de GPS
 GPX_FILE_PATH = os.getenv("GPX_FILE_PATH", "trail_route.gpx")  # Caminho do ficheiro GPX
 PUBLISH_INTERVAL = float(os.getenv("SIM_PUBLISH_INTERVAL", "1"))  # Intervalo de publicação (segundos)
+
+# --- Métricas Prometheus ---
+# Tráfego: Total de mensagens publicadas
+messages_published_total = Counter(
+    'simulator_messages_published_total',
+    'Total de mensagens publicadas no RabbitMQ',
+    ['athlete']
+)
+
+# Erros: Total de erros ao publicar
+publish_errors_total = Counter(
+    'simulator_publish_errors_total',
+    'Total de erros ao publicar mensagens'
+)
+
+# Saturação: Atletas ativos
+active_athletes = Gauge(
+    'simulator_active_athletes',
+    'Número de atletas simulados ativos'
+)
 
 # Lista de atletas simulados
 ATHLETES = [
@@ -69,6 +90,8 @@ def simulate_athlete(athlete, points):
     speed_mps = max(speed_kmh / 3.6, 0.1)  # Evita divisão por zero
 
     conn, ch = get_channel()
+    active_athletes.inc()  # Incrementar saturação
+
     try:
         if DEBUG:
             print(f"A simular {name} ({gender}) a {speed_kmh:.2f} km/h")
@@ -109,12 +132,15 @@ def simulate_athlete(athlete, points):
                             delivery_mode=2,  # Mensagem persistente
                         ),
                     )
+                    messages_published_total.labels(athlete=name).inc()  # Registar tráfego
                     if DEBUG:
                         print(f"Publicado: {event}")
                 except Exception as pub_exc:
+                    publish_errors_total.inc()  # Registar erro
                     print(f"Erro ao publicar evento: {pub_exc}")
                 time.sleep(PUBLISH_INTERVAL)
     finally:
+        active_athletes.dec()  # Decrementar saturação
         try:
             ch.close()
         except Exception:
@@ -146,4 +172,6 @@ def simulate_multiple_athletes():
 
 
 if __name__ == "__main__":
+    start_http_server(8080)
+    print("Servidor de métricas Prometheus iniciado na porta 8080")
     simulate_multiple_athletes()

@@ -2,7 +2,7 @@
 FROM python:3.9-slim
 
 # Instalar dependências
-RUN pip install fastapi uvicorn[standard] aio-pika
+RUN pip install fastapi uvicorn[standard] aio-pika prometheus-client
 
 # Copiar o código do backend
 WORKDIR /app

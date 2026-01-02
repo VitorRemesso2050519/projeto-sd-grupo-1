@@ -1,0 +1,31 @@
+// filepath: k8s/simulator/simulator-servicemonitor.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: simulator-metrics
+  namespace: grupo1
+  labels:
+    app: simulator
+spec:
+  selector:
+    app: simulator
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: simulator-monitor
+  namespace: grupo1
+  labels:
+    app: simulator
+spec:
+  selector:
+    matchLabels:
+      app: simulator
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
