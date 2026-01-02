@@ -9,7 +9,7 @@ import pika
 
 # --- Configuração (pode ser sobrescrita por variáveis de ambiente) ---
 DEBUG = os.getenv("SIM_DEBUG", "0") == "1"  # Ativa modo de depuração se SIM_DEBUG=1
-RABBIT_URL = os.getenv("RABBIT_URL", "amqp://grupo1:a1s2d3f4g5h6@rabbitmq-cluster:5672/")  # URL de ligação ao RabbitMQ
+RABBIT_URL = os.getenv("RABBIT_URL", "amqp://grupo1:a1s2d3f4g5h6@rabbitmq-cluster:5672")  # URL de ligação ao RabbitMQ
 RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")  # Exchange para publicação dos eventos
 RABBIT_ROUTING_KEY = os.getenv("RABBIT_ROUTING_KEY", "gps.update")  # Routing key para eventos de GPS
 GPX_FILE_PATH = os.getenv("GPX_FILE_PATH", "trail_route.gpx")  # Caminho do ficheiro GPX
