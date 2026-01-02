@@ -30,7 +30,7 @@ spec:
                   name: rabbitmq-auth
                   key: password
             - name: RABBIT_URL
-              value: amqp://$(RABBIT_USER):$(RABBIT_PASS)@10.43.122.199::5672/
+              value: amqp://$(RABBIT_USER):$(RABBIT_PASS)@rabbitmq-cluster.rabbitmq-system.svc.cluster.local:5672/
             - name: RABBIT_EXCHANGE
               value: events
             - name: RABBIT_ROUTING_KEY
