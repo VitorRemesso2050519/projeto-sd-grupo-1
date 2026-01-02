@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: simulator
-          image: vitorremesso/simulator:43720ae
+          image: vitorremesso/simulator:43a91fb
           env:
             - name: RABBIT_USER
               valueFrom: 
