@@ -6,7 +6,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 1 # Define 2 réplicas para alta disponibilidade
+  replicas: 2 # Define 2 réplicas para alta disponibilidade
   selector:
     matchLabels:
       app: backend
