@@ -9,6 +9,6 @@ spec:
   selector:
     app: simulator
   ports:
-    - name: metrics-frontend
+    - name: metrics-simulator
       port: 8080
       targetPort: 8080
