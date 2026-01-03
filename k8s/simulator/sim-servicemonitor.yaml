@@ -17,13 +17,16 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: simulator-monitor
-  namespace: grupo1
+  namespace: monitoring # <-- namespace do Prometheus!
   labels:
     app: simulator
 spec:
   selector:
     matchLabels:
       app: simulator
+  namespaceSelector:
+    matchNames:
+      - grupo1
   endpoints:
     - port: metrics
       path: /metrics
