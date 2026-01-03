@@ -17,16 +17,13 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: simulator-monitor
-  namespace: monitoring
+  namespace: grupo1
   labels:
     app: simulator
 spec:
   selector:
     matchLabels:
       app: simulator
-  namespaceSelector:
-    matchNames:
-      - grupo1
   endpoints:
     - port: metrics
       path: /metrics
