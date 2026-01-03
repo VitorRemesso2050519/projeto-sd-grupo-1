@@ -9,22 +9,6 @@ spec:
   selector:
     app: backend
   ports:
-    - name: metrics
+    - name: metrics-backend
       port: 8000
       targetPort: 8000
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: backend-monitor
-  namespace: grupo1
-  labels:
-    app: backend
-spec:
-  selector:
-    matchLabels:
-      app: backend
-  endpoints:
-    - port: metrics
-      path: /metrics
-      interval: 15s

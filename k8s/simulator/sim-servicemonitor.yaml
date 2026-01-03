@@ -9,22 +9,6 @@ spec:
   selector:
     app: simulator
   ports:
-    - name: metrics
+    - name: metrics-frontend
       port: 8080
       targetPort: 8080
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: simulator-monitor
-  namespace: grupo1
-  labels:
-    app: simulator
-spec:
-  selector:
-    matchLabels:
-      app: simulator
-  endpoints:
-    - port: metrics
-      path: /metrics
-      interval: 15s
