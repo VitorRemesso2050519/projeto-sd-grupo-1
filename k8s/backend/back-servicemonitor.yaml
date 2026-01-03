@@ -16,17 +16,14 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: grupo1-backend-monitor
-  namespace: monitoring
+  name: backend-monitor
+  namespace: grupo1
   labels:
     app: backend
 spec:
   selector:
     matchLabels:
       app: backend
-  namespaceSelector:
-    matchNames:
-      - grupo1
   endpoints:
     - port: metrics
       path: /metrics
