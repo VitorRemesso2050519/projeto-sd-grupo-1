@@ -1,7 +1,7 @@
 apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+kind: PodMonitor
 metadata:
-  name: backend-monitor
+  name: backend-podmonitor
   namespace: grupo1
   labels:
     app: backend
@@ -9,10 +9,7 @@ spec:
   selector:
     matchLabels:
       app: backend
-  namespaceSelector:
-    matchNames:
-      - grupo1
-  endpoints:
-    - port: metrics-backend
+  podMetricsEndpoints:
+    - port: 8000
       path: /metrics
       interval: 15s

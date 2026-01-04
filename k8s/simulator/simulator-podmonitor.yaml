@@ -1,8 +1,7 @@
-
 apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+kind: PodMonitor
 metadata:
-  name: simulator-monitor
+  name: simulator-podmonitor
   namespace: grupo1
   labels:
     app: simulator
@@ -10,10 +9,7 @@ spec:
   selector:
     matchLabels:
       app: simulator
-  namespaceSelector:
-    matchNames:
-      - grupo1
-  endpoints:
-    - port: metrics-simulator
+  podMetricsEndpoints:
+    - port: 8080
       path: /metrics
       interval: 15s
