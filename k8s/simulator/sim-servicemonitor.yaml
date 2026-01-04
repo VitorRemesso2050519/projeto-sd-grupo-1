@@ -6,28 +6,9 @@ metadata:
   labels:
     app: simulator
 spec:
-  selector:
-    app: simulator
+  type: ClusterIP
   ports:
-    - name: metrics-simulator
+    - name: http
       port: 8080
       targetPort: 8080
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: simulator-monitor
-  namespace: grupo1
-  labels:
-    app: simulator
-spec:
-  selector:
-    matchLabels:
-      app: simulator
-  namespaceSelector:
-    matchNames:
-      - grupo1
-  endpoints:
-    - port: metrics-simulator
-      path: /metrics
-      interval: 15s
+      protocol: TCP
