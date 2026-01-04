@@ -38,9 +38,14 @@ spec:
               value: events
             - name: RABBIT_ROUTING_KEY
               value: gps.update
-            - name: GPX_FILE_PATH
-              value: /app/data/trail_route.gpx
-          # volumeMounts removido para usar ficheiro do Docker image
+            - name: GPX_FOLDER
+              value: /app/gpx-files
+            - name: SIM_PUBLISH_INTERVAL
+              value: "0.5"
+          volumeMounts:
+            - name: gpx-volume
+              mountPath: /app/gpx-files
+              readOnly: true
           resources:
             requests:
               cpu: "100m"
@@ -58,7 +63,10 @@ spec:
               command: ["python", "-c", "import os; print('ok')"]
             initialDelaySeconds: 5
             periodSeconds: 10
-      # volumes removido para usar ficheiro do Docker image
+      volumes:
+        - name: gpx-volume
+          persistentVolumeClaim:
+            claimName: pvc-gpx
 # Deployment do simulador de atletas
 # Utiliza variáveis de ambiente seguras via Secret
 # Volume para ficheiro GPX via PVC

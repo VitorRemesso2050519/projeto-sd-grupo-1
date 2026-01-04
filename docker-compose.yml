@@ -54,23 +54,24 @@ services:
       - ./simulator/trail_route.gpx:/usr/share/nginx/html/gpx/trail_route.gpx  # Torna o ficheiro GPX acessível ao frontend
 
   simulator:
-    build: ./simulator  # Constrói a imagem do simulador a partir do directório local
-    container_name: trail-simulator  # Nome do contentor para facilitar identificação
+    build: ./simulator
+    container_name: trail-simulator
     environment:
-      RABBIT_URL: amqp://guest:guest@rabbitmq:5672/  # URL de ligação ao RabbitMQ
-      RABBIT_EXCHANGE: events  # Exchange para publicação dos eventos
-      RABBIT_ROUTING_KEY: gps.update  # Routing key usada para os eventos de GPS
-      GPX_FILE_PATH: /app/trail_route.gpx  # Caminho do ficheiro GPX dentro do contentor
+      RABBIT_URL: amqp://guest:guest@rabbitmq:5672/
+      RABBIT_EXCHANGE: events
+      RABBIT_ROUTING_KEY: gps.update
+      GPX_FOLDER: /app/gpx-files
+      SIM_PUBLISH_INTERVAL: "1"
     depends_on:
       rabbitmq:
-        condition: service_healthy  # Só inicia quando o RabbitMQ estiver saudável
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]  # Verifica se o simulador está saudável
-      interval: 10s  # Intervalo entre verificações
-      timeout: 5s  # Tempo limite para resposta
-      retries: 5  # Número de tentativas antes de considerar o serviço unhealthy
+        condition: service_healthy
     volumes:
-      - ./simulator/data:/app/data  # Volume para persistência de dados do simulador
+      - ./gpx-files:/app/gpx-files:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped  # Reinicia o contentor automaticamente, excepto se for parado manualmente
 
 volumes:
