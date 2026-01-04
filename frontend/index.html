@@ -134,17 +134,9 @@
         }).addTo(map);
 
         // Carregar o ficheiro GPX e centrar o mapa
-        const gpxFile = './trail_route.gpx'; // O GPX deve estar acessível via HTTP no servidor do frontend
-        const gpxLayer = new L.GPX(gpxFile, {
-            async: true, // Carrega o ficheiro GPX de forma assíncrona
-            marker_options: {
-                startIconUrl: "./start.png",
-                endIconUrl: "./finish.png",
-            }
-        }).on('loaded', function(e) {
-            // Ajusta o mapa aos limites da rota GPX
-            map.fitBounds(e.target.getBounds());
-        }).addTo(map);
+        let gpxLayer = null;
+        const raceSelect = document.getElementById('race-select');
+        let socket = null;
 
         // Botão de ajuste: recentralizar para os limites do GPX se disponível
         document.getElementById('zoom-fit').addEventListener('click', () => {
@@ -216,71 +208,63 @@
             if (name) zoomToRunner(name);
         });
 
-        // Função para ligar ao WebSocket com reconexão automática
+        function clearRunners() {
+            for (const k in athleteMarkers) { try { athleteMarkers[k].remove(); } catch(_){} }
+            Object.keys(athleteMarkers).forEach(k => delete athleteMarkers[k]);
+            runnerSelect.innerHTML = '<option value="">Pick runner</option>';
+        }
+
+        function loadRouteForRace(raceId) {
+            if (!raceId) return;
+            try { if (gpxLayer) map.removeLayer(gpxLayer); } catch (_) {}
+            const file = `/gpx/${raceId}.gpx`;
+            gpxLayer = new L.GPX(file, { async: true })
+                .on('loaded', e => {
+                    const b = e.target.getBounds && e.target.getBounds();
+                    if (b) map.fitBounds(b);
+                })
+                .addTo(map);
+        }
+
+        // Reconnect WS when race changes and load its GPX
+        raceSelect.addEventListener('change', () => {
+            const race = raceSelect.value;
+            clearRunners();
+            loadRouteForRace(race);
+            try { socket && socket.close(); } catch (_) {}
+            connectWebSocket();
+        });
+
         function connectWebSocket() {
-            // Cria a ligação WebSocket usando o hostname atual
-            const socket = new WebSocket("ws://" + window.location.hostname + ":30071/ws");
+            const race = raceSelect.value || "";
+            const qs = race ? ("?race_id=" + encodeURIComponent(race)) : "";
+            socket = new WebSocket("ws://" + window.location.hostname + ":30071/ws" + qs);
 
-            // Evento ao receber mensagem do backend
             socket.onmessage = function (event) {
-                try {
-                    const data = JSON.parse(event.data);
+                const data = JSON.parse(event.data || "{}");
+                if (!data.athlete || !data.location || data.location.latitude == null || data.location.longitude == null) return;
+                if (race && data.race_id && data.race_id !== race) return;
 
-                    // Validação dos dados recebidos
-                    if (!data.athlete || !data.location || !data.location.latitude || !data.location.longitude || !data.gender) {
-                        console.warn("Mensagem WebSocket ignorada: formato inválido", data);
-                        return;
-                    }
+                const athlete = data.athlete;
+                const lat = data.location.latitude;
+                const lon = data.location.longitude;
+                const icon = (data.gender === "male") ? maleIcon : femaleIcon;
 
-                    // Extrai dados do atleta
-                    const athlete = data.athlete;
-                    const gender = data.gender;
-                    const lat = data.location.latitude;
-                    const lon = data.location.longitude;
-
-                    // Escolhe o ícone com base no género
-                    const icon = gender === "male" ? maleIcon : femaleIcon;
-
-                    // Atualiza o marcador se já existir, senão cria um novo
-                    if (athlete in athleteMarkers) {
-                        const m = athleteMarkers[athlete];
-                        m.setLatLng([lat, lon]);
-                        // If currently selected runner, pan to their new position
-                        if (runnerSelect.value === athlete) {
-                            map.panTo(m.getLatLng(), {animate: true});
-                        }
-                    } else {
-                        // Cria novo marcador para o atleta
-                        const marker = L.marker([lat, lon], {icon: icon})
-                            .addTo(map)
-                            .bindPopup(`<b>${athlete}</b>`);
-                        // clicking a marker selects it in the dropdown and zooms
-                        marker.on('click', () => {
-                            runnerSelect.value = athlete;
-                            zoomToRunner(athlete);
-                        });
-                        athleteMarkers[athlete] = marker;
-                        addRunnerOption(athlete);
-                    }
-                } catch (e) {
-                    // Erro ao processar mensagem recebida
-                    console.error("Erro ao processar mensagem WebSocket:", e);
+                if (athlete in athleteMarkers) {
+                    const m = athleteMarkers[athlete];
+                    m.setLatLng([lat, lon]);
+                    if (runnerSelect.value === athlete) map.panTo(m.getLatLng(), {animate: true});
+                } else {
+                    const marker = L.marker([lat, lon], {icon}).addTo(map).bindPopup("<b>" + athlete + "</b>");
+                    marker.on('click', () => { runnerSelect.value = athlete; zoomToRunner(athlete); });
+                    athleteMarkers[athlete] = marker;
+                    addRunnerOption(athlete);
                 }
             };
 
-            // Evento ao perder ligação WebSocket
-            socket.onclose = function () {
-                console.warn("Ligação WebSocket perdida. A tentar reconectar...");
-                setTimeout(connectWebSocket, 2000);
-            };
-
-            // Evento de erro na ligação WebSocket
-            socket.onerror = function (e) {
-                console.error("Erro na ligação WebSocket:", e);
-                socket.close();
-            };
+            socket.onclose = () => { setTimeout(connectWebSocket, 2000); };
+            socket.onerror = (e) => { console.error("WS error:", e); socket.close(); };
         }
-        // Inicia a ligação WebSocket
         connectWebSocket();
     </script>
 </body>

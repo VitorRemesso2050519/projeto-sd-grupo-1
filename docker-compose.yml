@@ -51,7 +51,7 @@ services:
       retries: 5
     restart: unless-stopped  # Reinicia o contentor automaticamente, excepto se for parado manualmente
     volumes:
-      - ./simulator/trail_route.gpx:/usr/share/nginx/html/gpx/trail_route.gpx  # Torna o ficheiro GPX acessível ao frontend
+      - ./gpx-files:/usr/share/nginx/html/gpx:ro  # Monta a pasta gpx-files como somente leitura no contentor
 
   simulator:
     build: ./simulator
