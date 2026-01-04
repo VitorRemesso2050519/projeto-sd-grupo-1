@@ -29,7 +29,7 @@ services:
       rabbitmq:
         condition: service_healthy  # Só inicia quando o RabbitMQ estiver saudável
     ports:
-      - "8000:8000"  # Porta de exposição do backend
+      - "30071:8000"  # Porta de exposição do backend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # Verifica se o backend está saudável
       interval: 10s
