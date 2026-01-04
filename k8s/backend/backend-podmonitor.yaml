@@ -10,6 +10,6 @@ spec:
     matchLabels:
       app: backend
   podMetricsEndpoints:
-    - port: 8000
+    - port: metrics-backend
       path: /metrics
       interval: 15s

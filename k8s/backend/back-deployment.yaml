@@ -19,7 +19,8 @@ spec:
         - name: backend
           image: vitorremesso/backend:8a0487a
           ports:
-            - containerPort: 8000
+          - name: metrics-backend
+            containerPort: 8000
           env:
             - name: RABBIT_USER
               valueFrom: 

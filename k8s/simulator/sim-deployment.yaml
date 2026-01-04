@@ -19,8 +19,8 @@ spec:
         - name: simulator
           image: vitorremesso/simulator:8a0487a
           ports:
-            - containerPort: 8080
-              name: metrics
+          - name: metrics-simulator
+            containerPort: 8080
           env:
             - name: RABBIT_USER
               valueFrom: 

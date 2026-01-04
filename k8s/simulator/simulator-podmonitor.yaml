@@ -10,6 +10,6 @@ spec:
     matchLabels:
       app: simulator
   podMetricsEndpoints:
-    - port: 8080
+    - port: metrics-simulator
       path: /metrics
       interval: 15s
