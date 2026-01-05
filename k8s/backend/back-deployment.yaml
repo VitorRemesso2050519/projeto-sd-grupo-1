@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: vitorremesso/backend:4432e08
+          image: vitorremesso/backend:267b8aa
           ports:
           - name: metrics-backend
             containerPort: 8000
