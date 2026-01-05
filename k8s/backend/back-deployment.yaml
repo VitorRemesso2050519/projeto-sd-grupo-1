@@ -40,10 +40,10 @@ spec:
               value: events.gps
           resources:
             requests:
-              cpu: "12m"
+              cpu: "50m"
               memory: "64Mi"
             limits:
-              cpu: "50m"
+              cpu: "100m"
               memory: "128Mi"
           livenessProbe:
             httpGet:
