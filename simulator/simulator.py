@@ -68,13 +68,35 @@ def generate_athletes(num, races):
     genders = ["male", "female"]
     race_ids = list(races.keys()) if races else ["trail_route1", "trail_route2"]
     athletes = []
-    for _ in range(num):
-        athlete = {
-            "name": generate_random_name(),
-            "gender": random.choice(genders),
-            "race": random.choice(race_ids)
-        }
-        athletes.append(athlete)
+    if not race_ids:
+        return athletes
+    # Distribuir aleatoriamente o número de atletas por corrida
+    # Gera uma partição aleatória de 'num' atletas pelas corridas
+    num_races = len(race_ids)
+    if num_races == 1:
+        athletes_per_race = [num]
+    else:
+        # Gera (num_races-1) cortes aleatórios entre 0 e num, ordena, e calcula as diferenças
+        cuts = sorted(random.sample(range(1, num), num_races-1)) if num > num_races else list(range(1, num))
+        athletes_per_race = [cuts[0] if cuts else num]
+        for i in range(1, len(cuts)):
+            athletes_per_race.append(cuts[i] - cuts[i-1])
+        if cuts:
+            athletes_per_race.append(num - cuts[-1])
+        else:
+            athletes_per_race = [1]*num + [0]*(num_races-len([1]*num))
+        # Corrige se houver menos partições que corridas
+        while len(athletes_per_race) < num_races:
+            athletes_per_race.append(0)
+    # Criar atletas para cada corrida
+    for race_idx, n_ath in enumerate(athletes_per_race):
+        for _ in range(n_ath):
+            athlete = {
+                "name": generate_random_name(),
+                "gender": random.choice(genders),
+                "race": race_ids[race_idx]
+            }
+            athletes.append(athlete)
     return athletes
 
 ATHLETES = None  # Será gerado dinamicamente após descobrir as corridas
