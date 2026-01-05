@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: simulator-config
 data:
-  SIM_NUM_ATHLETES: "50"
+  SIM_NUM_ATHLETES: "20"
