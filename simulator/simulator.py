@@ -33,6 +33,8 @@ RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")  # Exchange para public
 RABBIT_ROUTING_KEY = os.getenv("RABBIT_ROUTING_KEY", "gps.update")  # Routing key para eventos de GPS
 PUBLISH_INTERVAL = float(os.getenv("SIM_PUBLISH_INTERVAL", "1"))  # Intervalo de publicação (segundos)
 
+# dumb ci trigger
+
 # --- Métricas Prometheus ---
 # Tráfego: Total de mensagens publicadas
 messages_published_total = Counter(
