@@ -14,7 +14,7 @@ spec:
     matchNames:
       - grupo1
   endpoints:
-    - port: http
+    - port: metrics-backend
       path: /metrics
       interval: 15s
     

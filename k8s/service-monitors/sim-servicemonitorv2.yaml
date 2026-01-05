@@ -14,6 +14,6 @@ spec:
     matchNames:
       - grupo1
   endpoints:
-    - port: http
+    - port: metrics-simulator
       path: /metrics
       interval: 15s
