@@ -10,7 +10,7 @@ spec:
   selector:
     app: simulator
   ports:
-    - name: metrics-simulator
+    - name: metrics-sim
       port: 8080
       targetPort: 8080
       protocol: TCP
