@@ -56,17 +56,30 @@ active_athletes = Gauge(
     'Número de atletas simulados ativos'
 )
 
-# Lista de atletas simulados
-ATHLETES = [
-    {"name": "John Doe", "gender": "male", "race": "trail_route1"},
-    {"name": "Jane Smith", "gender": "female", "race": "trail_route1"},
-    {"name": "Alice Johnson", "gender": "female", "race": "trail_route2"},
-    {"name": "Bob Brown", "gender": "male", "race": "trail_route1"},
-    {"name": "Michael Phelps", "gender": "male", "race": "trail_route2"},
-    {"name": "Serena Williams", "gender": "female", "race": "trail_route2"},
-    {"name": "Usain Bolt", "gender": "male", "race": "trail_route1"},
-]
+
+# Número de atletas a simular (definido por variável de ambiente)
+NUM_ATHLETES = int(os.getenv("SIM_NUM_ATHLETES", "10"))
 SPEED_VARIATION = (6, 12)  # Variação da velocidade dos atletas (km/h)
+
+def generate_random_name():
+    first_names = ["John", "Jane", "Alice", "Bob", "Michael", "Serena", "Usain", "Maria", "Carlos", "Ana", "David", "Laura", "Pedro", "Sofia", "Miguel", "Rita"]
+    last_names = ["Doe", "Smith", "Johnson", "Brown", "Phelps", "Williams", "Bolt", "Silva", "Costa", "Martins", "Oliveira", "Santos", "Ferreira", "Gomes", "Alves", "Rocha"]
+    return f"{random.choice(first_names)} {random.choice(last_names)}"
+
+def generate_athletes(num, races):
+    genders = ["male", "female"]
+    race_ids = list(races.keys()) if races else ["trail_route1", "trail_route2"]
+    athletes = []
+    for _ in range(num):
+        athlete = {
+            "name": generate_random_name(),
+            "gender": random.choice(genders),
+            "race": random.choice(race_ids)
+        }
+        athletes.append(athlete)
+    return athletes
+
+ATHLETES = None  # Será gerado dinamicamente após descobrir as corridas
 
 def get_connection():
     """Create a new connection to RabbitMQ."""
@@ -225,14 +238,19 @@ def simulate_race(race_id, gpx_file):
         th.join()
     print(f"[{race_id}] Corrida concluída")
 
+
 def simulate_all_races():
     """
-    Discover all races in GPX_FOLDER and execute each one in parallel.
+    Descobre todas as corridas e executa cada uma em paralelo.
     """
+    global ATHLETES
     races = discover_races()
     if not races:
         print("Nenhuma corrida encontrada.")
         return
+
+    # Gerar atletas dinamicamente
+    ATHLETES = generate_athletes(NUM_ATHLETES, races)
 
     race_threads = []
     for race_id, gpx_path in races.items():
