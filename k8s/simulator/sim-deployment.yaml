@@ -50,13 +50,13 @@ spec:
               memory: "128Mi"
           livenessProbe:
             exec:
-              command: ["python", "-c", "import os; print('ok')"]
+              command: ["python", "-c", "print('ok')"]
             initialDelaySeconds: 10
             periodSeconds: 30
             timeoutSeconds: 5
           readinessProbe:
             exec:
-              command: ["python", "-c", "import os; print('ok')"]
+              command: ["python", "-c", "print('ok')"]
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
