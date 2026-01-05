@@ -21,6 +21,21 @@ PUBLISH_INTERVAL = float(os.getenv("SIM_PUBLISH_INTERVAL", "1"))  # Intervalo de
 
 # dumb ci trigger
 
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'OK')
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+def run_health_server():
+    server = HTTPServer(('0.0.0.0', 8081), HealthHandler)
+    server.serve_forever()
+
 # --- Métricas Prometheus ---
 # Tráfego: Total de mensagens publicadas
 messages_published_total = Counter(
