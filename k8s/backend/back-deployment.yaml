@@ -6,7 +6,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 1 # Define 1 réplica inicial  e o HPA permite escalar para 6
+  replicas: 2 # Define 2 réplica inicial e o HPA permite escalar para 4
   selector:
     matchLabels:
       app: backend
