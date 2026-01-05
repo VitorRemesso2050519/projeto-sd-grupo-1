@@ -15,6 +15,7 @@ import time
 RABBIT_URL = os.getenv("RABBIT_URL", "amqp://grupo1:a1s2d3f4g5h6@rabbitmq-cluster.rabbitmq-system.svc.cluster.local:5672/")  # URL de ligação ao RabbitMQ
 RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")  # Exchange para publicação dos eventos
 RABBIT_QUEUE = os.getenv("RABBIT_QUEUE", "events.gps")  # Fila para eventos de GPS
+REQUIRED_FIELDS = {"race_id", "athlete", "gender", "location", "elevation", "time", "event"}
 
 # Instancia a aplicação FastAPI
 app = FastAPI(title="Trail Backend (WS + RabbitMQ)")
@@ -152,9 +153,8 @@ async def receive_event(event: dict):
     Endpoint HTTP opcional para compatibilidade retroativa.
     Difunde o evento recebido para todos os clientes WebSocket conectados.
     """
-    required_fields = {"race_id","athlete","gender","location","elevation","time","event"}
-    if not isinstance(event, dict) or not required_fields.issubset(event.keys()):
-        return {"status": "erro", "detail": "Formato de evento inválido. Campos obrigatórios: " + ', '.join(required_fields)}
+    if not isinstance(event, dict) or not REQUIRED_FIELDS.issubset(event.keys()):
+        return {"status": "erro", "detail": "Formato de evento inválido. Campos obrigatórios: " + ', '.join(REQUIRED_FIELDS)}
     await _broadcast(event)
     return {"status": "evento enviado"}
 

@@ -68,6 +68,11 @@ ATHLETES = [
 ]
 SPEED_VARIATION = (6, 12)  # Variação da velocidade dos atletas (km/h)
 
+def get_connection():
+    """Create a new connection to RabbitMQ."""
+    parameters = pika.URLParameters(RABBIT_URL)
+    return pika.BlockingConnection(parameters)
+
 def get_channel():
     """Create a channel on the shared connection."""
     conn = get_connection()
