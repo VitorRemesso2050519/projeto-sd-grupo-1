@@ -49,10 +49,10 @@ spec:
                   key: SIM_NUM_ATHLETES
           resources:
             requests:
-              cpu: "24m"
+              cpu: "100m"
               memory: "128Mi"
             limits:
-              cpu: "100m"
+              cpu: "200m"
               memory: "256Mi"
           livenessProbe:
             httpGet:
