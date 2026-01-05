@@ -254,7 +254,14 @@
             if (!raceId) return;
             try { if (gpxLayer) map.removeLayer(gpxLayer); } catch (_) {}
             const file = `/gpx/${raceId}.gpx`;
-            gpxLayer = new L.GPX(file, { async: true })
+            gpxLayer = new L.GPX(file, {
+                async: true,
+                marker_options: {
+                    startIconUrl: '/start.png',
+                    endIconUrl: '/finish.png',
+                    shadowUrl: null  // Remove shadow if you don't have it
+                }
+            })
                 .on('loaded', e => {
                     const b = e.target.getBounds && e.target.getBounds();
                     if (b) map.fitBounds(b);
