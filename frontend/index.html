@@ -297,24 +297,50 @@
         // Reconnect WS when race changes and load its GPX
         raceSelect.addEventListener('change', () => {
             const race = raceSelect.value;
+            // Fechar WebSocket ANTES de limpar para evitar mensagens pendentes
+            if (socket) {
+                socket.onmessage = null; // Desativar handler antes de fechar
+                socket.onclose = null;   // Evitar reconexão automática
+                try { socket.close(); } catch (_) {}
+                socket = null;
+            }
             clearRunners();
+            
+            // Se não há corrida selecionada, limpar também o GPX e não conectar
+            if (!race) {
+                try { if (gpxLayer) map.removeLayer(gpxLayer); } catch (_) {}
+                gpxLayer = null;
+                // Reset map to default view
+                map.setView([32.65, -16.9], 10);
+                return;
+            }
+            
             loadRouteForRace(race);
-            try { socket && socket.close(); } catch (_) {}
             connectWebSocket();
         });
 
         function connectWebSocket() {
             const race = raceSelect.value || "";
             const qs = race ? ("?race_id=" + encodeURIComponent(race)) : "";
+
             socket = new WebSocket("ws://" + window.location.hostname + ":30071/ws" + qs);
+
+            // Guardar a corrida atual para validação
+            const currentRaceAtConnection = race;
 
             socket.onmessage = function (event) {
                 const data = JSON.parse(event.data || "{}");
                 if (!data.athlete || !data.location || data.location.latitude == null || data.location.longitude == null) return;
                 
-                if (!race) return;
+                // Verificar se a corrida selecionada mudou desde a conexão
+                const selectedRace = raceSelect.value;
+                if (!selectedRace) return;
                 
-                if (data.race_id && data.race_id !== race) return;
+                // Ignorar mensagens de outras corridas
+                if (data.race_id && data.race_id !== selectedRace) return;
+                
+                // Verificar se a conexão ainda é válida para a corrida atual
+                if (currentRaceAtConnection !== selectedRace) return;
 
                 const athlete = data.athlete;
                 const lat = data.location.latitude;
@@ -333,8 +359,13 @@
                 }
             };
 
-            socket.onclose = () => { setTimeout(connectWebSocket, 2000); };
-            socket.onerror = (e) => { console.error("WS error:", e); socket.close(); };
+            socket.onclose = () => { 
+                // Só reconectar se ainda houver uma corrida selecionada e o socket não foi fechado manualmente
+                if (raceSelect.value && socket) {
+                    setTimeout(connectWebSocket, 2000); 
+                }
+            };
+            socket.onerror = (e) => { console.error("WS error:", e); if (socket) socket.close(); };
         }
         // Carregar corridas e inicializar com a primeira automaticamente
         loadRaces().then(() => {
