@@ -1,7 +1,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: backend-podmonitor
+  name: grupo1-backend-podmonitor
   namespace: grupo1
   labels:
     app: backend

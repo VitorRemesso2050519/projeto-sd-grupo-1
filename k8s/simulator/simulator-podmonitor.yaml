@@ -1,7 +1,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: simulator-podmonitor
+  name: grupo1-simulator-podmonitor
   namespace: grupo1
   labels:
     app: simulator
