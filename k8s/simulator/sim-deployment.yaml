@@ -64,7 +64,6 @@ spec:
           volumeMounts:
             - name: gpx-volume
               mountPath: /app/gpx-files
-              readOnly: true
       volumes:
         - name: gpx-volume
           persistentVolumeClaim:
