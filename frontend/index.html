@@ -305,6 +305,16 @@
                 socket = null;
             }
             clearRunners();
+            
+            // Se não há corrida selecionada, limpar também o GPX e não conectar
+            if (!race) {
+                try { if (gpxLayer) map.removeLayer(gpxLayer); } catch (_) {}
+                gpxLayer = null;
+                // Reset map to default view
+                map.setView([32.65, -16.9], 10);
+                return;
+            }
+            
             loadRouteForRace(race);
             connectWebSocket();
         });
