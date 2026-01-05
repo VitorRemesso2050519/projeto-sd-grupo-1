@@ -5,8 +5,12 @@ RUN pip install gpxpy pika prometheus-client
 
 WORKDIR /app
 COPY simulator.py /app/simulator.py
+COPY gpx-files/ /app/gpx-source/
 RUN mkdir -p /app/gpx-files /app/data
+
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8080
 
-CMD ["python", "simulator.py"]
+CMD ["/app/entrypoint.sh"]

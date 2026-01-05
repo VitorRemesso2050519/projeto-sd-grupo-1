@@ -107,7 +107,7 @@
     <nav class="navbar">
         <div class="title">Trail Run — Simulation View</div>
         <div class="actions">
-            <!-- Seletor de corrida (placeholder para suporte futuro do backend) -->
+            <!-- Seletor de corrida -->
             <select id="race-select" title="Pick a race" style="margin-right:8px;">
                 <option value="">Pick race</option>
             </select>
@@ -125,7 +125,7 @@
 
     <script>
         // Criar o mapa Leaflet
-        const map = L.map('map').setView([0, 0], 13); // Vista inicial (será atualizada)
+        const map = L.map('map').setView([32.65, -16.9], 10); // Vista inicial (será atualizada)
 
         // Adicionar OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -202,15 +202,20 @@
             if (selected) zoomToRunner(selected);
         });
 
-        // Opcional: auto-zoom ao selecionar um corredor no dropdown
+        // Auto-zoom ao selecionar um corredor no dropdown
         runnerSelect.addEventListener('change', (e) => {
             const name = e.target.value;
             if (name) zoomToRunner(name);
         });
 
         function clearRunners() {
-            for (const k in athleteMarkers) { try { athleteMarkers[k].remove(); } catch(_){} }
-            Object.keys(athleteMarkers).forEach(k => delete athleteMarkers[k]);
+            for (const k in athleteMarkers) {
+                try {
+                    map.removeLayer(athleteMarkers[k]);
+                    athleteMarkers[k].remove();
+                } catch(_){}
+                delete athleteMarkers[k];
+            }
             runnerSelect.innerHTML = '<option value="">Pick runner</option>';
         }
 
@@ -219,7 +224,14 @@
                 const response = await fetch('http://' + window.location.hostname + ':30071/races');
                 const data = await response.json();
                 const raceSelect = document.getElementById('race-select');
-                data.races.forEach(race => {
+                
+                // Se não houver corridas do backend, usar as conhecidas
+                let races = data.races || [];
+                if (races.length === 0) {
+                    races = ['trail_route1', 'trail_route2'];
+                }
+                
+                races.forEach(race => {
                     const opt = document.createElement('option');
                     opt.value = race;
                     opt.textContent = race;
@@ -227,6 +239,14 @@
                 });
             } catch (err) {
                 console.error('Failed to load races:', err);
+                // Fallback: adicionar corridas conhecidas
+                const raceSelect = document.getElementById('race-select');
+                ['trail_route1', 'trail_route2'].forEach(race => {
+                    const opt = document.createElement('option');
+                    opt.value = race;
+                    opt.textContent = race;
+                    raceSelect.appendChild(opt);
+                });
             }
         }
 
@@ -238,6 +258,9 @@
                 .on('loaded', e => {
                     const b = e.target.getBounds && e.target.getBounds();
                     if (b) map.fitBounds(b);
+                })
+                .on('error', e => {
+                    console.error('Erro ao carregar GPX:', e);
                 })
                 .addTo(map);
         }
@@ -281,8 +304,17 @@
             socket.onclose = () => { setTimeout(connectWebSocket, 2000); };
             socket.onerror = (e) => { console.error("WS error:", e); socket.close(); };
         }
-        connectWebSocket();
-        loadRaces();
+        // Carregar corridas e inicializar com a primeira automaticamente
+        loadRaces().then(() => {
+            const firstRace = raceSelect.options[1]?.value;
+            if (firstRace) {
+                raceSelect.value = firstRace;
+                loadRouteForRace(firstRace);
+                connectWebSocket();
+            } else {
+                connectWebSocket();
+            }
+        });
     </script>
 </body>
 </html>
