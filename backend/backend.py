@@ -108,6 +108,9 @@ async def metrics():
     """Endpoint para expor métricas Prometheus"""
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
+@app.get("/")
+async def health():
+    return {"status": "ok"}
 
 @app.get("/health")
 async def health():
