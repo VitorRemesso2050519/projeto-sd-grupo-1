@@ -214,6 +214,22 @@
             runnerSelect.innerHTML = '<option value="">Pick runner</option>';
         }
 
+        async function loadRaces() {
+            try {
+                const response = await fetch('http://' + window.location.hostname + ':30071/races');
+                const data = await response.json();
+                const raceSelect = document.getElementById('race-select');
+                data.races.forEach(race => {
+                    const opt = document.createElement('option');
+                    opt.value = race;
+                    opt.textContent = race;
+                    raceSelect.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('Failed to load races:', err);
+            }
+        }
+
         function loadRouteForRace(raceId) {
             if (!raceId) return;
             try { if (gpxLayer) map.removeLayer(gpxLayer); } catch (_) {}
@@ -266,6 +282,7 @@
             socket.onerror = (e) => { console.error("WS error:", e); socket.close(); };
         }
         connectWebSocket();
+        loadRaces();
     </script>
 </body>
 </html>

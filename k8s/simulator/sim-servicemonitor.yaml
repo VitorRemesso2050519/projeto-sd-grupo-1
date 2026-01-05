@@ -7,6 +7,8 @@ metadata:
     app: simulator
 spec:
   type: ClusterIP
+  selector:
+    app: simulator
   ports:
     - name: metrics-simulator
       port: 8080

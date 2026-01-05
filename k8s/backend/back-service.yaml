@@ -10,7 +10,8 @@ spec:
   selector:
     app: backend
   ports:
-    - port: 8000
+    - name: metrics-backend
+      port: 8000
       targetPort: 8000
       protocol: TCP
       nodePort: 30071

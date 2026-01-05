@@ -1,5 +1,4 @@
 import gpxpy
-import gpxpy.gpx
 import time
 import random
 import json
@@ -49,25 +48,34 @@ ATHLETES = [
 ]
 SPEED_VARIATION = (6, 12)  # Variação da velocidade dos atletas (km/h)
 
+# Global connection (create once)
+_connection = None
+_connection_lock = threading.Lock()
+
+def get_connection():
+    global _connection
+    with _connection_lock:
+        if _connection is None or _connection.is_closed:
+            _connection = pika.BlockingConnection(pika.URLParameters(RABBIT_URL))
+        return _connection
 
 def get_channel():
-    """Create a RabbitMQ channel."""
-    connection = pika.BlockingConnection(pika.URLParameters(RABBIT_URL))
-    channel = connection.channel()
+    """Create a channel on the shared connection."""
+    conn = get_connection()
+    channel = conn.channel()
     channel.exchange_declare(exchange=RABBIT_EXCHANGE, exchange_type='fanout', durable=True)
-    return connection, channel
-
+    return conn, channel
 
 def read_gpx(file_path):
     """
-    Lê e faz o parsing do ficheiro GPX. Termina o programa se houver erro.
+    Lê e faz o parsing do ficheiro GPX. Retorna None se houver erro.
     """
     try:
         with open(file_path, "r") as f:
             return gpxpy.parse(f)
     except Exception as e:
         print(f"Erro ao ler {file_path}: {e}")
-        exit(1)
+        return None
 
 def discover_races():
     """
@@ -110,7 +118,7 @@ def simulate_athlete(race_id, athlete, points):
             distance = start.distance_3d(end) or 0.0
             duration = max(int(distance / speed_mps), 1)
 
-            for t in range(duration):
+            for t in range(duration + 1):
                 fraction = t / duration
                 lat = (start.latitude or 0.0) + fraction * ((end.latitude or 0.0) - (start.latitude or 0.0))
                 lon = (start.longitude or 0.0) + fraction * ((end.longitude or 0.0) - (start.longitude or 0.0))
@@ -144,6 +152,16 @@ def simulate_athlete(race_id, athlete, points):
                 except Exception as pub_exc:
                     publish_errors_total.inc()
                     print(f"[{race_id}] Erro ao publicar evento: {pub_exc}")
+                    # Attempt to reconnect
+                    try:
+                        conn.close()
+                    except:
+                        pass
+                    try:
+                        conn, ch = get_channel()
+                    except Exception as reconn_exc:
+                        print(f"[{race_id}] Falha ao reconectar: {reconn_exc}")
+                        return  # Exit thread gracefully
                 time.sleep(PUBLISH_INTERVAL)
     finally:
         active_athletes.dec()
@@ -185,23 +203,6 @@ def simulate_race(race_id, gpx_file):
         th.join()
     print(f"[{race_id}] Corrida concluída")
 
-"""def simulate_multiple_athletes():
-    "" Lê o ficheiro GPX, extrai os pontos e inicia uma thread por atleta.
-    gpx = read_gpx(GPX_FILE_PATH)
-    points = []
-    for track in gpx.tracks:
-        for segment in track.segments:
-            points.extend(segment.points)
-
-    threads = []
-    for athlete in ATHLETES:
-        th = Thread(target=simulate_athlete, args=(athlete, points), daemon=True)
-        threads.append(th)
-        th.start()
-
-    for th in threads:
-        th.join() """
-
 def simulate_all_races():
     """
     Discover all races in GPX_FOLDER and execute each one in parallel.
@@ -224,3 +225,6 @@ if __name__ == "__main__":
     start_http_server(8080)
     print("Servidor de métricas Prometheus iniciado na porta 8080")
     simulate_all_races()
+    # Keep the process alive for metrics scraping
+    while True:
+        time.sleep(60)

@@ -214,15 +214,25 @@ async def _consume_loop():
 
                 async with queue.iterator() as q:
                     async for message in q:
-                        async with message.process():
-                            try:
-                                body = message.body.decode("utf-8")
-                                event = json.loads(body)
-                                rabbitmq_messages_consumed_total.inc()  # Registar tráfego
-                                await _broadcast(event)
-                            except Exception as e:
-                                rabbitmq_errors_total.inc()  # Registar erro
-                                print(f"Erro ao processar mensagem: {e}")
+                        try:
+                            body = message.body.decode("utf-8")
+                            event = json.loads(body)
+                            
+                            # Validate event schema
+                            if not isinstance(event, dict) or not REQUIRED_FIELDS.issubset(event.keys()):
+                                raise ValueError(f"Invalid event schema: {event}")
+                            
+                            rabbitmq_messages_consumed_total.inc()
+                            await _broadcast(event)
+                            await message.ack()
+                        except (json.JSONDecodeError, ValueError) as e:
+                            rabbitmq_errors_total.inc()
+                            print(f"Invalid message rejected: {e}")
+                            await message.reject(requeue=False)  # Don't requeue malformed messages
+                        except Exception as e:
+                            rabbitmq_errors_total.inc()
+                            print(f"Erro ao processar mensagem: {e}")
+                            await message.nack(requeue=True)  # Requeue for retry
             finally:
                 # Fecha a ligação se sair do loop de consumo
                 with contextlib.suppress(Exception):

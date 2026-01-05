@@ -13,14 +13,14 @@ Elimina Replicas (RS) vazias (sem pods associados) do namespace "grupo1"
 - kubectl get rs -n grupo1 --no-headers | awk '$4==0 {print $1}' | xargs -r kubectl delete rs -n grupo1
 
 Para o Frontend:
-- kubectl -n argocd port-forward svc/frontend 8081:80
+- kubectl -n grupo1 port-forward svc/frontend 8081:80
 
 Para o Backend:
-- kubectl -n argocd port-forward svc/backend 8000:8000
+- kubectl -n grupo1 port-forward svc/backend 8000:8000
 
 Para o RabbitMQ (AMQP e management UI respetivamente):
-- kubectl -n argocd port-forward svc/rabbitmq 5672:5672
-- kubectl -n argocd port-forward svc/rabbitmq 15672:15672
+- kubectl -n rabbitmq port-forward svc/rabbitmq 5672:5672
+- kubectl -n rabbitmq port-forward svc/rabbitmq 15672:15672
 
 1ªFASE: 12/11/2025 CI/CD AUTOMÁTICO COM A APLICAÇÃO BASE (10%):
 - Criar um repositório Github público e montar toda a pipeline de CI/CD para o cluster local no Docker Desktop.
