@@ -5,8 +5,7 @@ metadata:
 data:
   SIM_DEBUG: "0"
   GPX_FOLDER: "/app/gpx-files"
-  RABBIT_URL: "amqp://grupo1:a1s2d3f4g5h6@rabbitmq-cluster.rabbitmq-system.svc.cluster.local:5672/"
   RABBIT_EXCHANGE: "events"
   RABBIT_ROUTING_KEY: "gps.update"
-  SIM_PUBLISH_INTERVAL: "1"
+  SIM_PUBLISH_INTERVAL: "0.5"
   SIM_NUM_ATHLETES: "20"

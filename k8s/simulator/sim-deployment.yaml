@@ -35,13 +35,25 @@ spec:
             - name: RABBIT_URL
               value: amqp://$(RABBIT_USER):$(RABBIT_PASS)@rabbitmq-cluster.rabbitmq-system.svc.cluster.local:5672/
             - name: RABBIT_EXCHANGE
-              value: events
+              valueFrom:
+                configMapKeyRef:
+                  name: simulator-config
+                  key: RABBIT_EXCHANGE
             - name: RABBIT_ROUTING_KEY
-              value: gps.update
+              valueFrom:
+                configMapKeyRef:
+                  name: simulator-config
+                  key: RABBIT_ROUTING_KEY
             - name: GPX_FOLDER
-              value: /app/gpx-files
+              valueFrom:
+                configMapKeyRef:
+                  name: simulator-config
+                  key: GPX_FOLDER
             - name: SIM_PUBLISH_INTERVAL
-              value: "0.5"
+              valueFrom:
+                configMapKeyRef:
+                  name: simulator-config
+                  key: SIM_PUBLISH_INTERVAL
             - name: SIM_NUM_ATHLETES
               valueFrom:
                 configMapKeyRef:
