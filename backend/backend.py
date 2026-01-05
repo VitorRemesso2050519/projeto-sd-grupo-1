@@ -6,7 +6,8 @@ import asyncio
 import contextlib
 import json
 import os
-from typing import List
+from collections import defaultdict
+from typing import List, Dict, Set
 import aio_pika
 import time
 
@@ -69,6 +70,9 @@ app.add_middleware(
 
 # Ligações WebSocket ativas (apenas para instância atual)
 connections: List[WebSocket] = []
+connections_by_race: Dict[str, Set[WebSocket]] = defaultdict(set)
+known_races: Set[str] = set()
+athletes_by_race: Dict[str, Set[str]] = defaultdict(set)
 
 # Middleware para medir latência e tráfego
 @app.middleware("http")
@@ -109,25 +113,36 @@ async def health():
     """Endpoint para healthcheck do serviço."""
     return {"status": "ok"}
 
+@app.get("/races")
+async def list_races():
+    """Lista corridas observadas pelo consumidor/backend."""
+    return {"races": sorted(known_races)}
+
+@app.get("/races/{race_id}/athletes")
+async def list_athletes(race_id: str):
+    """Lista atletas observados numa corrida."""
+    return {"race": race_id, "athletes": sorted(athletes_by_race.get(race_id, set()))}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """Endpoint WebSocket para comunicação em tempo real com clientes."""
     await websocket.accept()
     connections.append(websocket)
+    race_id = websocket.query_params.get("race_id") or "*"  # "*" recebe todas
+    connections_by_race[race_id].add(websocket)
     websocket_connections_active.set(len(connections))  # Atualizar saturação
     try:
         while True:
-            # Mantém o socket ativo
             await asyncio.sleep(1)
     except WebSocketDisconnect:
         pass
-    except Exception as e:
-        print(f"Erro inesperado na ligação WebSocket: {e}")
     finally:
         with contextlib.suppress(ValueError):
             connections.remove(websocket)
-        websocket_connections_active.set(len(connections))  # Atualizar saturação
+        # Remover de todas as subscrições
+        for subs in connections_by_race.values():
+            subs.discard(websocket)
+        websocket_connections_active.set(len(connections))
         print("Cliente WebSocket desconectado")
 
 
@@ -137,8 +152,7 @@ async def receive_event(event: dict):
     Endpoint HTTP opcional para compatibilidade retroativa.
     Difunde o evento recebido para todos os clientes WebSocket conectados.
     """
-    # Validação do evento
-    required_fields = {"athlete", "gender", "location", "elevation", "time", "event"}
+    required_fields = {"race_id","athlete","gender","location","elevation","time","event"}
     if not isinstance(event, dict) or not required_fields.issubset(event.keys()):
         return {"status": "erro", "detail": "Formato de evento inválido. Campos obrigatórios: " + ', '.join(required_fields)}
     await _broadcast(event)
@@ -146,9 +160,18 @@ async def receive_event(event: dict):
 
 
 async def _broadcast(event: dict):
-    """Envia um evento para todos os clientes WebSocket conectados."""
+    """Envia um evento para clientes subscritos na corrida do evento."""
     disconnected = []
-    for ws in list(connections):
+    race = event.get("race_id", "*")
+    if race and race != "*":
+        known_races.add(race)
+    athlete = event.get("athlete")
+    if race and athlete:
+        athletes_by_race[race].add(athlete)
+    targets = set()
+    targets |= connections_by_race.get(race, set())
+    targets |= connections_by_race.get("*", set())
+    for ws in list(targets):
         try:
             await ws.send_json(event)
         except Exception as e:
@@ -157,7 +180,8 @@ async def _broadcast(event: dict):
     for ws in disconnected:
         with contextlib.suppress(ValueError):
             connections.remove(ws)
-    websocket_connections_active.set(len(connections))
+        for subs in connections_by_race.values():
+            subs.discard(ws)
 
 
 # -----------------------------

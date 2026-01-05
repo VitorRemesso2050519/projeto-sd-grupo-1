@@ -8,8 +8,7 @@ RUN pip install requests gpxpy pika prometheus-client
 # Copiar o código do simulador e ficheiro GPX para o local correto
 WORKDIR /app
 COPY simulator.py /app/simulator.py
-RUN mkdir -p /app/data
-COPY trail_route.gpx /app/data/trail_route.gpx
+RUN mkdir -p /app/gpx-files /app/data
 
 EXPOSE 8080
 
