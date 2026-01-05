@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 from threading import Thread
+import threading
 import pika
 from prometheus_client import Counter, Gauge, start_http_server
 
