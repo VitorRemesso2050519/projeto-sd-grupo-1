@@ -1,19 +1,5 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import socketserver
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path == '/health':
-            self.send_response(200)
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(b'OK')
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-def run_health_server():
-    server = HTTPServer(('0.0.0.0', 8081), HealthHandler)
-    server.serve_forever()
 import gpxpy
 import time
 import random
@@ -67,17 +53,6 @@ ATHLETES = [
 ]
 SPEED_VARIATION = (6, 12)  # Variação da velocidade dos atletas (km/h)
 
-# Global connection (create once)
-_connection = None
-_connection_lock = threading.Lock()
-
-def get_connection():
-    global _connection
-    with _connection_lock:
-        if _connection is None or _connection.is_closed:
-            _connection = pika.BlockingConnection(pika.URLParameters(RABBIT_URL))
-        return _connection
-
 def get_channel():
     """Create a channel on the shared connection."""
     conn = get_connection()
@@ -124,9 +99,13 @@ def simulate_athlete(race_id, athlete, points):
     speed_kmh = random.uniform(*SPEED_VARIATION)
     speed_mps = max(speed_kmh / 3.6, 0.1)
 
-    conn, ch = get_channel()
+    conn = None
+    ch = None
     active_athletes.inc()
     try:
+        # Each thread gets its own connection
+        conn, ch = get_channel()
+        
         if DEBUG:
             print(f"[{race_id}] A simular {name} ({gender}) a {speed_kmh:.2f} km/h")
 
@@ -168,28 +147,32 @@ def simulate_athlete(race_id, athlete, points):
                     messages_published_total.labels(athlete=name, race=race_id).inc()
                     if DEBUG:
                         print(f"[{race_id}] Publicado: {event}")
-                except Exception as pub_exc:
+                except pika.exceptions.AMQPError as pub_exc:
                     publish_errors_total.inc()
                     print(f"[{race_id}] Erro ao publicar evento: {pub_exc}")
-                    # Attempt to reconnect
+                    # Reconnect with new connection
                     try:
-                        conn.close()
-                    except:
+                        if conn and not conn.is_closed:
+                            conn.close()
+                    except Exception:
                         pass
                     try:
                         conn, ch = get_channel()
                     except Exception as reconn_exc:
                         print(f"[{race_id}] Falha ao reconectar: {reconn_exc}")
-                        return  # Exit thread gracefully
+                        return
+                        
                 time.sleep(PUBLISH_INTERVAL)
     finally:
         active_athletes.dec()
         try:
-            ch.close()
+            if ch and ch.is_open:
+                ch.close()
         except Exception:
             pass
         try:
-            conn.close()
+            if conn and not conn.is_closed:
+                conn.close()
         except Exception:
             pass
 
