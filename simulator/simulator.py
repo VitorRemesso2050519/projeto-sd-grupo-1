@@ -1,3 +1,19 @@
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import socketserver
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'OK')
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+def run_health_server():
+    server = HTTPServer(('0.0.0.0', 8081), HealthHandler)
+    server.serve_forever()
 import gpxpy
 import time
 import random
@@ -223,9 +239,14 @@ def simulate_all_races():
         t.join()
 
 if __name__ == "__main__":
+    # Inicia Prometheus na porta 8080
     start_http_server(8080)
     print("Servidor de métricas Prometheus iniciado na porta 8080")
+    # Inicia o endpoint /health na porta 8081
+    health_thread = Thread(target=run_health_server, daemon=True)
+    health_thread.start()
+    print("Endpoint de health iniciado na porta 8081 (/health)")
     simulate_all_races()
-    # Keep the process alive for metrics scraping
+    # Mantém o processo vivo para scraping de métricas e health
     while True:
         time.sleep(60)
