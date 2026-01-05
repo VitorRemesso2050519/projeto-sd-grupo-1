@@ -50,14 +50,16 @@ spec:
               cpu: "50m"
               memory: "128Mi"
           livenessProbe:
-            exec:
-              command: ["python", "-c", "print('ok')"]
+            httpGet:
+              path: /health
+              port: 8080
             initialDelaySeconds: 10
             periodSeconds: 30
             timeoutSeconds: 5
           readinessProbe:
-            exec:
-              command: ["python", "-c", "print('ok')"]
+            httpGet:
+              path: /health
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
