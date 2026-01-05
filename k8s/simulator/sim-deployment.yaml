@@ -42,6 +42,11 @@ spec:
               value: /app/gpx-files
             - name: SIM_PUBLISH_INTERVAL
               value: "0.5"
+            - name: SIM_NUM_ATHLETES
+              valueFrom:
+                configMapKeyRef:
+                  name: simulator-config
+                  key: SIM_NUM_ATHLETES
           resources:
             requests:
               cpu: "24m"
