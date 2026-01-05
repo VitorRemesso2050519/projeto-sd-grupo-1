@@ -209,13 +209,14 @@
         });
 
         function clearRunners() {
+            // Remove all markers from the map
             for (const k in athleteMarkers) {
                 try {
                     map.removeLayer(athleteMarkers[k]);
-                    athleteMarkers[k].remove();
                 } catch(_){}
                 delete athleteMarkers[k];
             }
+            // Reset the runner dropdown
             runnerSelect.innerHTML = '<option value="">Pick runner</option>';
         }
 
@@ -230,7 +231,8 @@
             }
             // Only add to dropdown if matches current race
             const currentRace = raceSelect.value;
-            if (currentRace && raceId && raceId !== currentRace) return;
+            if (!currentRace) return; // Don't add if no race selected
+            if (raceId && raceId !== currentRace) return;
             if (![...runnerSelect.options].some(o => o.value === name)) {
                 const opt = document.createElement('option');
                 opt.value = name;
@@ -309,7 +311,10 @@
             socket.onmessage = function (event) {
                 const data = JSON.parse(event.data || "{}");
                 if (!data.athlete || !data.location || data.location.latitude == null || data.location.longitude == null) return;
-                if (race && data.race_id && data.race_id !== race) return;
+                
+                if (!race) return;
+                
+                if (data.race_id && data.race_id !== race) return;
 
                 const athlete = data.athlete;
                 const lat = data.location.latitude;
