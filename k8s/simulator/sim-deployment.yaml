@@ -50,14 +50,15 @@ spec:
               memory: "128Mi"
           livenessProbe:
             exec:
-              command: ["python", "-c", "'import os; print('ok')'"]
+              command: ["python", "-c", "import os; print('ok')"]
             initialDelaySeconds: 10
             periodSeconds: 30
           readinessProbe:
             exec:
-              command: ["python", "-c", "'import os; print('ok')'"]
+              command: ["python", "-c", "import os; print('ok')"]
             initialDelaySeconds: 5
             periodSeconds: 10
+            timeoutSeconds: 5
       # volumes removido para usar ficheiro do Docker image
 # Deployment do simulador de atletas
 # Utiliza variáveis de ambiente seguras via Secret
