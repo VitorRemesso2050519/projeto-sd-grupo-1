@@ -22,6 +22,9 @@ Para o RabbitMQ (AMQP e management UI respetivamente):
 - kubectl -n rabbitmq port-forward svc/rabbitmq 5672:5672
 - kubectl -n rabbitmq port-forward svc/rabbitmq 15672:15672
 
+Para HPA (ver regras de escalonamento horizontal):
+ - kubectl get hpa -n grupo1
+
 1ªFASE: 12/11/2025 CI/CD AUTOMÁTICO COM A APLICAÇÃO BASE (10%):
 - Criar um repositório Github público e montar toda a pipeline de CI/CD para o cluster local no Docker Desktop.
 - Configurar Github Actions para atualizações no código e envio de imagens para o DockerHub.
