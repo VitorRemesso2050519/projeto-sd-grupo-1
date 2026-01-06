@@ -69,26 +69,14 @@ def generate_athletes(num, races):
     race_ids = list(races.keys())
     athletes = []
     if not race_ids:
-        # Não gera atletas se não houver corridas reais
         return athletes
-    # Distribuir aleatoriamente o número de atletas por corrida
-    # Gera uma partição aleatória de 'num' atletas pelas corridas
     num_races = len(race_ids)
-    if num_races == 1:
-        athletes_per_race = [num]
-    else:
-        # Gera (num_races-1) cortes aleatórios entre 0 e num, ordena, e calcula as diferenças
-        cuts = sorted(random.sample(range(1, num), num_races-1)) if num > num_races else list(range(1, num))
-        athletes_per_race = [cuts[0] if cuts else num]
-        for i in range(1, len(cuts)):
-            athletes_per_race.append(cuts[i] - cuts[i-1])
-        if cuts:
-            athletes_per_race.append(num - cuts[-1])
-        else:
-            athletes_per_race = [1]*num + [0]*(num_races-len([1]*num))
-        # Corrige se houver menos partições que corridas
-        while len(athletes_per_race) < num_races:
-            athletes_per_race.append(0)
+    # Distribuição igualitária e ajuste do resto
+    base = num // num_races
+    resto = num % num_races
+    athletes_per_race = [base] * num_races
+    for i in range(resto):
+        athletes_per_race[i] += 1
     # Criar atletas para cada corrida
     for race_idx, n_ath in enumerate(athletes_per_race):
         for _ in range(n_ath):
