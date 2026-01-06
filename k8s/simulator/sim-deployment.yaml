@@ -70,14 +70,14 @@ spec:
             httpGet:
               path: /health
               port: 8081
-            initialDelaySeconds: 20
-            periodSeconds: 30
+            initialDelaySeconds: 60
+            periodSeconds: 10
             timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /health
               port: 8081
-            initialDelaySeconds: 20
+            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 5
           volumeMounts:
