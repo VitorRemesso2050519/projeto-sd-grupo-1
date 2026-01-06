@@ -66,9 +66,10 @@ def generate_random_name():
 
 def generate_athletes(num, races):
     genders = ["male", "female"]
-    race_ids = list(races.keys()) if races else ["trail_route1", "trail_route2"]
+    race_ids = list(races.keys())
     athletes = []
     if not race_ids:
+        # Não gera atletas se não houver corridas reais
         return athletes
     # Distribuir aleatoriamente o número de atletas por corrida
     # Gera uma partição aleatória de 'num' atletas pelas corridas
