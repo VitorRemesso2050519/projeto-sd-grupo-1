@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: vitorremesso/frontend:02605d4
+          image: vitorremesso/frontend:a634bd5
           ports:
             - containerPort: 80
           readinessProbe:
