@@ -1,4 +1,4 @@
-Projeto de Sistemas Distribuidos.
+Projeto de Sistemas Distribuidos (Grupo 1).
 
 Para o ArgoCD:
 - kubectl create namespace argocd
