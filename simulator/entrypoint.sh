@@ -1,8 +1,12 @@
 #!/bin/sh
 
-# Apaga todos os ficheiros existentes na pasta de destino
-rm -rf /app/gpx-files/*
-# Copia sempre os ficheiros da origem para o destino
-cp -r /tmp/gpx-files/* /app/gpx-files/
-echo "GPX files copied to volume."
+
+# Copia apenas ficheiros que ainda não existem no destino
+for src in /tmp/gpx-files/*; do
+	dest="/app/gpx-files/$(basename "$src")"
+	if [ ! -e "$dest" ]; then
+		cp "$src" "$dest"
+	fi
+done
+echo "GPX files copied to volume (only new files)."
 exec python simulator.py
