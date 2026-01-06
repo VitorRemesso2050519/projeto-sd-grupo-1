@@ -9,9 +9,6 @@ Para o ArgoCD:
 Elimina Replicas (RS) vazias (sem pods associados)
 - kubectl get rs -n argocd | Select-String " 0 " | ForEach-Object { $rs = $_.ToString().Split(" ")[0]; kubectl delete rs $rs -n argocd }
 
-Elimina Replicas (RS) vazias (sem pods associados) do namespace "grupo1"
-- kubectl get rs -n grupo1 --no-headers | awk '$4==0 {print $1}' | xargs -r kubectl delete rs -n grupo1
-
 Para o Frontend:
 - kubectl -n grupo1 port-forward svc/frontend 8081:80
 
@@ -21,6 +18,9 @@ Para o Backend:
 Para o RabbitMQ (AMQP e management UI respetivamente):
 - kubectl -n rabbitmq port-forward svc/rabbitmq 5672:5672
 - kubectl -n rabbitmq port-forward svc/rabbitmq 15672:15672
+
+Elimina Replicas (RS) vazias (sem pods associados) do namespace "grupo1"
+- kubectl get rs -n grupo1 --no-headers | awk '$4==0 {print $1}' | xargs -r kubectl delete rs -n grupo1
 
 Para HPA (ver regras de escalonamento horizontal):
  - kubectl get hpa -n grupo1
