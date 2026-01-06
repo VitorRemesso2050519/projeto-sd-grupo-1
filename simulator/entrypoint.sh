@@ -1,8 +1,8 @@
 #!/bin/sh
-if [ "$(ls -A /app/gpx-files)" ]; then
-  echo "GPX folder not empty, skipping copy."
-else
-  cp -r /tmp/gpx-files/* /app/gpx-files/
-  echo "GPX files copied to volume."
-fi
+
+# Apaga todos os ficheiros existentes na pasta de destino
+rm -rf /app/gpx-files/*
+# Copia sempre os ficheiros da origem para o destino
+cp -r /tmp/gpx-files/* /app/gpx-files/
+echo "GPX files copied to volume."
 exec python simulator.py
