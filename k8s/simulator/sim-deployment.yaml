@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: simulator
-          image: vitorremesso/simulator:63d3c6b
+          image: vitorremesso/simulator:ca8eee2
           ports:
             - containerPort: 8080
               name: metrics-sim
