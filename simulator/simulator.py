@@ -18,7 +18,7 @@ RABBIT_URL = os.getenv("RABBIT_URL", "amqp://grupo1:a1s2d3f4g5h6@rabbitmq-cluste
 RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")  # Exchange para publicação dos eventos
 RABBIT_ROUTING_KEY = os.getenv("RABBIT_ROUTING_KEY", "gps.update")  # Routing key para eventos de GPS
 PUBLISH_INTERVAL = float(os.getenv("SIM_PUBLISH_INTERVAL", "1"))  # Intervalo de publicação (segundos)
-NUM_ATHLETES = int(os.getenv("SIM_NUM_ATHLETES", "10")) # Número de atletas a simular
+NUM_ATHLETES = int(os.getenv("SIM_NUM_ATHLETES", "20")) # Número de atletas a simular
 
 # dumb ci trigger
 

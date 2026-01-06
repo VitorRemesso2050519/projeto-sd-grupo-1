@@ -7,5 +7,5 @@ data:
   GPX_FOLDER: "/app/gpx-files"
   RABBIT_EXCHANGE: "events"
   RABBIT_ROUTING_KEY: "gps.update"
-  SIM_PUBLISH_INTERVAL: "0.5"
-  SIM_NUM_ATHLETES: "30"
+  SIM_PUBLISH_INTERVAL: "1" # Intervalo entre as mensagens de localização dos atletas em segundos
+  SIM_NUM_ATHLETES: "30"  # Número de atletas simulados

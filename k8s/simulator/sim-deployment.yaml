@@ -59,6 +59,11 @@ spec:
                 configMapKeyRef:
                   name: simulator-config
                   key: SIM_NUM_ATHLETES
+            - name: SIM_DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: simulator-config
+                  key: SIM_DEBUG
           resources:
             requests:
               cpu: "100m"
