@@ -246,23 +246,30 @@
                 const response = await fetch('http://' + window.location.hostname + ':30071/races');
                 const data = await response.json();
                 const raceSelect = document.getElementById('race-select');
-                
-                // Se não houver corridas do backend, usar as conhecidas
-                let races = data.races || [];
-                if (races.length === 0) {
-                    races = ['trail_route1', 'trail_route2'];
+                // Limpa opções antigas, exceto o placeholder
+                raceSelect.innerHTML = '<option value="">Pick race</option>';
+                let races = Array.isArray(data.races) ? data.races : [];
+                if (races.length > 0) {
+                    races.forEach(race => {
+                        const opt = document.createElement('option');
+                        opt.value = race;
+                        opt.textContent = race;
+                        raceSelect.appendChild(opt);
+                    });
+                } else {
+                    // Só adiciona valores padrão se não houver corridas reais
+                    ['trail_route1', 'trail_route2'].forEach(race => {
+                        const opt = document.createElement('option');
+                        opt.value = race;
+                        opt.textContent = race;
+                        raceSelect.appendChild(opt);
+                    });
                 }
-                
-                races.forEach(race => {
-                    const opt = document.createElement('option');
-                    opt.value = race;
-                    opt.textContent = race;
-                    raceSelect.appendChild(opt);
-                });
             } catch (err) {
                 console.error('Failed to load races:', err);
-                // Fallback: adicionar corridas conhecidas
+                // Fallback: adicionar corridas conhecidas apenas se fetch falhar
                 const raceSelect = document.getElementById('race-select');
+                raceSelect.innerHTML = '<option value="">Pick race</option>';
                 ['trail_route1', 'trail_route2'].forEach(race => {
                     const opt = document.createElement('option');
                     opt.value = race;
