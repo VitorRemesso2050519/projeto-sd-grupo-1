@@ -157,13 +157,10 @@ def _init_rabbitmq_pool():
 
 def get_pooled_channel():
     """Obtém uma conexão/canal do pool (bloqueia até estar disponível ou esgota)."""
-    try:
-        conn = _conn_pool.get(timeout=5)
-        ch = _ch_pool.get(timeout=5)
-        return conn, ch
-    except Empty:
-        logger.error("Pool de conexões/canais esgotado!")
-        raise
+    # Bloqueia indefinidamente até que um canal/conexão esteja disponível
+    conn = _conn_pool.get()
+    ch = _ch_pool.get()
+    return conn, ch
 
 def release_pooled_channel(conn, ch):
     """Devolve a conexão/canal ao pool após uso pela thread."""
