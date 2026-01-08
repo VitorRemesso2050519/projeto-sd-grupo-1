@@ -322,12 +322,15 @@ def simulate_race(race_id, gpx_file, batch_mode=False, batch_size=10):
         logger.error(f"[{race_id}] Nenhum ponto encontrado no GPX: {gpx_file}")
         return
     # Permitir que todos os atletas sejam simulados, cada thread aguarda canal disponível
-    num_atletas = len([a for a in ATHLETES if a.get("race") == race_id])
+    atletas_corrida = [a for a in ATHLETES if a.get("race") == race_id]
+    num_atletas = len(atletas_corrida)
+    logger.info(f"[SIM] Corrida {race_id}: {num_atletas} atletas a simular: {[a['name'] for a in atletas_corrida]}")
+    if num_atletas == 0:
+        logger.warning(f"[SIM] Corrida {race_id}: Nenhum atleta encontrado para simular!")
+        return
     with ThreadPoolExecutor(max_workers=num_atletas) as executor:
         futures = []
-        for athlete in ATHLETES:
-            if athlete.get("race") != race_id:
-                continue
+        for athlete in atletas_corrida:
             futures.append(executor.submit(simulate_athlete, race_id, athlete, points, batch_mode, batch_size))
         for future in as_completed(futures):
             try:
