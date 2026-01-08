@@ -197,7 +197,7 @@ def read_gpx(file_path):
         with open(file_path, "r") as f:
             return gpxpy.parse(f)
     except Exception as e:
-        print(f"Erro ao ler {file_path}: {e}")
+        logger.error(f"[GPX] Erro ao ler/parsing {file_path}: {e}")
         return None
 
 def discover_races():
@@ -307,17 +307,19 @@ def simulate_race(race_id, gpx_file, batch_mode=False, batch_size=10):
     """
     Run a single race: read points, start threads only for athletes in this race.
     """
+    logger.info(f"[SIM] Iniciando simulação da corrida {race_id} com ficheiro {gpx_file}")
     gpx = read_gpx(gpx_file)
     if not gpx:
-        logger.error(f"[{race_id}] GPX inválido: {gpx_file}")
+        logger.error(f"[{race_id}] GPX inválido ou erro ao ler/parsing: {gpx_file}")
         return
     # Cache de pontos GPX
     points = []
     for track in gpx.tracks:
         for segment in track.segments:
             points.extend(segment.points)
+    logger.info(f"[SIM] Corrida {race_id}: {len(points)} pontos GPX carregados")
     if not points:
-        logger.error(f"[{race_id}] Nenhum ponto encontrado")
+        logger.error(f"[{race_id}] Nenhum ponto encontrado no GPX: {gpx_file}")
         return
     # Permitir que todos os atletas sejam simulados, cada thread aguarda canal disponível
     num_atletas = len([a for a in ATHLETES if a.get("race") == race_id])
