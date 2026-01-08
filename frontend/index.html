@@ -223,27 +223,21 @@
         // Track athletes per race (garante unicidade)
         const athletesByRace = {};
 
-        // Atualiza a lista de atletas no <select> SEM duplicados
-        function updateRunnerList(raceId) {
-            const currentRace = raceSelect.value;
-            if (!currentRace || raceId !== currentRace) return;
-            const knownAthletes = Array.from(athletesByRace[raceId] || []);
-            runnerSelect.innerHTML = '<option value="">Pick runner</option>';
-            knownAthletes.forEach(name => {
-                const opt = document.createElement('option');
-                opt.value = name;
-                opt.textContent = name;
-                runnerSelect.appendChild(opt);
-            });
-        }
-
         // Sempre que receber evento, atualiza a lista de atletas
         function addRunnerOption(name, raceId) {
             if (raceId) {
                 if (!athletesByRace[raceId]) athletesByRace[raceId] = new Set();
                 athletesByRace[raceId].add(name);
             }
-            updateRunnerList(raceId);
+            // Só adiciona ao <select> se não existir ainda e for da corrida selecionada
+            const currentRace = raceSelect.value;
+            if (!currentRace || raceId !== currentRace) return;
+            if (![...runnerSelect.options].some(o => o.value === name)) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                runnerSelect.appendChild(opt);
+            }
         }
 
         async function loadRaces() {
