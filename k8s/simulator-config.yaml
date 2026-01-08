@@ -8,4 +8,4 @@ data:
   RABBIT_EXCHANGE: "events"
   RABBIT_ROUTING_KEY: "gps.update"
   SIM_PUBLISH_INTERVAL: "1" # Intervalo entre as mensagens de localização dos atletas em segundos
-  SIM_NUM_ATHLETES: "50"  # Número de atletas simulados
+  SIM_NUM_ATHLETES: "10"  # Número de atletas simulados por corrida
