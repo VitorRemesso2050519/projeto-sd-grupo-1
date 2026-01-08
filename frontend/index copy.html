@@ -220,30 +220,25 @@
             runnerSelect.innerHTML = '<option value="">Pick runner</option>';
         }
 
-        // Track athletes per race (garante unicidade)
+        // Track athletes per race
         const athletesByRace = {};
 
-        // Atualiza a lista de atletas no <select> SEM duplicados
-        function updateRunnerList(raceId) {
-            const currentRace = raceSelect.value;
-            if (!currentRace || raceId !== currentRace) return;
-            const knownAthletes = Array.from(athletesByRace[raceId] || []);
-            runnerSelect.innerHTML = '<option value="">Pick runner</option>';
-            knownAthletes.forEach(name => {
-                const opt = document.createElement('option');
-                opt.value = name;
-                opt.textContent = name;
-                runnerSelect.appendChild(opt);
-            });
-        }
-
-        // Sempre que receber evento, atualiza a lista de atletas
         function addRunnerOption(name, raceId) {
+            // Track athlete for this race
             if (raceId) {
                 if (!athletesByRace[raceId]) athletesByRace[raceId] = new Set();
                 athletesByRace[raceId].add(name);
             }
-            updateRunnerList(raceId);
+            // Only add to dropdown if matches current race
+            const currentRace = raceSelect.value;
+            if (!currentRace) return; // Don't add if no race selected
+            if (raceId && raceId !== currentRace) return;
+            if (![...runnerSelect.options].some(o => o.value === name)) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                runnerSelect.appendChild(opt);
+            }
         }
 
         async function loadRaces() {
@@ -367,9 +362,8 @@
                     const marker = L.marker([lat, lon], {icon}).addTo(map).bindPopup("<b>" + athlete + "</b>");
                     marker.on('click', () => { runnerSelect.value = athlete; zoomToRunner(athlete); });
                     athleteMarkers[athlete] = marker;
+                    addRunnerOption(athlete, data.race_id);
                 }
-                // Adiciona/atualiza atleta na lista SEMPRE
-                addRunnerOption(athlete, data.race_id);
             };
 
             socket.onclose = () => { 
