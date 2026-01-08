@@ -349,8 +349,15 @@ def simulate_all_races(batch_mode=False, batch_size=10):
         print("Nenhuma corrida encontrada.")
         return
 
+    logger.info(f"Corridas descobertas: {list(races.keys())}")
+
     # Gerar atletas dinamicamente
+    global ATHLETES
     ATHLETES = generate_athletes(NUM_ATHLETES, races)
+    logger.info(f"Total de atletas gerados: {len(ATHLETES)}")
+    for race_id in races.keys():
+        atletas_corrida = [a['name'] for a in ATHLETES if a['race'] == race_id]
+        logger.info(f"Atletas para corrida {race_id}: {atletas_corrida}")
 
     # Inicializar pool de conexões/canais
     _init_rabbitmq_pool()
