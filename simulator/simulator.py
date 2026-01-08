@@ -70,13 +70,6 @@ def generate_athletes(num, races):
     athletes = []
     if not race_ids:
         return athletes
-    num_races = len(race_ids)
-    # Distribuição igualitária e ajuste do resto
-    base = num // num_races
-    resto = num % num_races
-    athletes_per_race = [base] * num_races
-    for i in range(resto):
-        athletes_per_race[i] += 1
 
     used_names = set()
 
@@ -88,13 +81,13 @@ def generate_athletes(num, races):
                 used_names.add(name)
                 return name
 
-    # Criar atletas para cada corrida
-    for race_idx, n_ath in enumerate(athletes_per_race):
-        for _ in range(n_ath):
+    # Para cada corrida, gera exatamente 'num' atletas
+    for race_id in race_ids:
+        for _ in range(num):
             athlete = {
                 "name": get_unique_name(),
                 "gender": random.choice(genders),
-                "race": race_ids[race_idx]
+                "race": race_id
             }
             athletes.append(athlete)
     return athletes
