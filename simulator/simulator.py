@@ -264,7 +264,9 @@ def simulate_race(race_id, gpx_file, batch_mode=False, batch_size=10):
         logger.error(f"[{race_id}] Nenhum ponto encontrado")
         return
     # Limitar threads de atletas
-    max_workers = min(8, len([a for a in ATHLETES if a.get("race") == race_id]))
+    # Limitar threads de atletas ao tamanho do pool
+    num_atletas = len([a for a in ATHLETES if a.get("race") == race_id])
+    max_workers = min(POOL_SIZE, num_atletas) if POOL_SIZE > 0 else num_atletas
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = []
         for athlete in ATHLETES:
