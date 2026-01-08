@@ -9,3 +9,8 @@ data:
   RABBIT_ROUTING_KEY: "gps.update"
   SIM_PUBLISH_INTERVAL: "1" # Intervalo entre as mensagens de localização dos atletas em segundos
   SIM_NUM_ATHLETES: "15"  # Número de atletas simulados por corrida
+  # --- Variáveis de performance e logging ---
+  SIM_POOL_SIZE: "8"           # Tamanho do pool de conexões/canais RabbitMQ
+  SIM_BATCH_MODE: "0"          # 1 para ativar batch de publicação
+  SIM_BATCH_SIZE: "10"         # Tamanho do lote de eventos no batch
+  SIM_LOG_LEVEL: "INFO"        # Nível de logging: DEBUG, INFO, WARNING, ERROR

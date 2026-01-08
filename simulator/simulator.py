@@ -2,12 +2,15 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import socketserver
 import gpxpy
 import time
+import logging
 import random
 import json
 import os
 from pathlib import Path
-from threading import Thread
+from threading import Thread, Lock
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from queue import Queue, Empty
 import pika
 from prometheus_client import Counter, Gauge, start_http_server
 
@@ -20,7 +23,11 @@ RABBIT_ROUTING_KEY = os.getenv("RABBIT_ROUTING_KEY", "gps.update")  # Routing ke
 PUBLISH_INTERVAL = float(os.getenv("SIM_PUBLISH_INTERVAL", "1"))  # Intervalo de publicação (segundos)
 NUM_ATHLETES = int(os.getenv("SIM_NUM_ATHLETES", "20")) # Número de atletas a simular
 
-# dumb ci trigger
+
+# --- Logging configurável ---
+LOG_LEVEL = os.getenv("SIM_LOG_LEVEL", "INFO").upper()
+logging.basicConfig(level=LOG_LEVEL, format='[%(asctime)s] %(levelname)s: %(message)s')
+logger = logging.getLogger("simulator")
 
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -92,7 +99,37 @@ def generate_athletes(num, races):
             athletes.append(athlete)
     return athletes
 
+
 ATHLETES = None  # Será gerado dinamicamente após descobrir as corridas
+
+# --- Pool de conexões/canais RabbitMQ ---
+POOL_SIZE = int(os.getenv("SIM_POOL_SIZE", "8"))
+_conn_pool = Queue(maxsize=POOL_SIZE)
+_ch_pool = Queue(maxsize=POOL_SIZE)
+_pool_lock = Lock()
+
+def _init_rabbitmq_pool():
+    for _ in range(POOL_SIZE):
+        conn = get_connection()
+        ch = conn.channel()
+        ch.exchange_declare(exchange=RABBIT_EXCHANGE, exchange_type='fanout', durable=True)
+        _conn_pool.put(conn)
+        _ch_pool.put(ch)
+    logger.info(f"Pool de conexões/canais RabbitMQ inicializado com {POOL_SIZE} conexões.")
+
+def get_pooled_channel():
+    try:
+        conn = _conn_pool.get(timeout=5)
+        ch = _ch_pool.get(timeout=5)
+        return conn, ch
+    except Empty:
+        logger.error("Pool de conexões/canais esgotado!")
+        raise
+
+def release_pooled_channel(conn, ch):
+    if conn and ch:
+        _conn_pool.put(conn)
+        _ch_pool.put(ch)
 
 def get_connection():
     """Create a new connection to RabbitMQ."""
@@ -136,7 +173,7 @@ def discover_races():
     print(f"Corridas descobertas: {list(races.keys())}")
     return races
 
-def simulate_athlete(race_id, athlete, points):
+def simulate_athlete(race_id, athlete, points, batch_mode=False, batch_size=10):
     """
     Simula um atleta numa corrida específica.
     """
@@ -149,19 +186,15 @@ def simulate_athlete(race_id, athlete, points):
     ch = None
     active_athletes.inc()
     try:
-        # Each thread gets its own connection
-        conn, ch = get_channel()
-        
+        conn, ch = get_pooled_channel()
         if DEBUG:
-            print(f"[{race_id}] A simular {name} ({gender}) a {speed_kmh:.2f} km/h")
-
+            logger.info(f"[{race_id}] A simular {name} ({gender}) a {speed_kmh:.2f} km/h")
+        batch = []
         for i in range(len(points) - 1):
             start = points[i]
             end = points[i + 1]
-
             distance = start.distance_3d(end) or 0.0
             duration = max(int(distance / speed_mps), 1)
-
             for t in range(duration + 1):
                 fraction = t / duration
                 lat = (start.latitude or 0.0) + fraction * ((end.latitude or 0.0) - (start.latitude or 0.0))
@@ -169,7 +202,6 @@ def simulate_athlete(race_id, athlete, points):
                 s_ele = start.elevation or 0.0
                 e_ele = end.elevation or 0.0
                 ele = s_ele + fraction * (e_ele - s_ele)
-
                 event = {
                     "race_id": race_id,
                     "athlete": name,
@@ -179,80 +211,75 @@ def simulate_athlete(race_id, athlete, points):
                     "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                     "event": "running",
                 }
-
-                try:
-                    ch.basic_publish(
-                        exchange=RABBIT_EXCHANGE,
-                        routing_key=RABBIT_ROUTING_KEY,
-                        body=json.dumps(event).encode("utf-8"),
-                        properties=pika.BasicProperties(
-                            content_type="application/json",
-                            delivery_mode=2,
-                        ),
-                    )
-                    messages_published_total.labels(athlete=name, race=race_id).inc()
-                    if DEBUG:
-                        print(f"[{race_id}] Publicado: {event}")
-                except pika.exceptions.AMQPError as pub_exc:
-                    publish_errors_total.inc()
-                    print(f"[{race_id}] Erro ao publicar evento: {pub_exc}")
-                    # Reconnect with new connection
-                    try:
-                        if conn and not conn.is_closed:
-                            conn.close()
-                    except Exception:
-                        pass
-                    try:
-                        conn, ch = get_channel()
-                    except Exception as reconn_exc:
-                        print(f"[{race_id}] Falha ao reconectar: {reconn_exc}")
-                        return
-                        
+                batch.append(event)
+                if batch_mode and len(batch) >= batch_size:
+                    _publish_batch(ch, batch, name, race_id)
+                    batch.clear()
+                elif not batch_mode:
+                    _publish_event(ch, event, name, race_id)
                 time.sleep(PUBLISH_INTERVAL)
+        if batch_mode and batch:
+            _publish_batch(ch, batch, name, race_id)
+    except Exception as e:
+        logger.error(f"[{race_id}] Erro na simulação do atleta {name}: {e}")
     finally:
         active_athletes.dec()
-        try:
-            if ch and ch.is_open:
-                ch.close()
-        except Exception:
-            pass
-        try:
-            if conn and not conn.is_closed:
-                conn.close()
-        except Exception:
-            pass
+        release_pooled_channel(conn, ch)
+def _publish_event(ch, event, name, race_id):
+    try:
+        ch.basic_publish(
+            exchange=RABBIT_EXCHANGE,
+            routing_key=RABBIT_ROUTING_KEY,
+            body=json.dumps(event).encode("utf-8"),
+            properties=pika.BasicProperties(
+                content_type="application/json",
+                delivery_mode=2,
+            ),
+        )
+        messages_published_total.labels(athlete=name, race=race_id).inc()
+        if DEBUG:
+            logger.debug(f"[{race_id}] Publicado: {event}")
+    except pika.exceptions.AMQPError as pub_exc:
+        publish_errors_total.inc()
+        logger.error(f"[{race_id}] Erro ao publicar evento: {pub_exc}")
 
-def simulate_race(race_id, gpx_file):
+def _publish_batch(ch, batch, name, race_id):
+    for event in batch:
+        _publish_event(ch, event, name, race_id)
+
+def simulate_race(race_id, gpx_file, batch_mode=False, batch_size=10):
     """
     Run a single race: read points, start threads only for athletes in this race.
     """
     gpx = read_gpx(gpx_file)
     if not gpx:
-        print(f"[{race_id}] GPX inválido: {gpx_file}")
+        logger.error(f"[{race_id}] GPX inválido: {gpx_file}")
         return
-
+    # Cache de pontos GPX
     points = []
     for track in gpx.tracks:
         for segment in track.segments:
             points.extend(segment.points)
     if not points:
-        print(f"[{race_id}] Nenhum ponto encontrado")
+        logger.error(f"[{race_id}] Nenhum ponto encontrado")
         return
+    # Limitar threads de atletas
+    max_workers = min(8, len([a for a in ATHLETES if a.get("race") == race_id]))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = []
+        for athlete in ATHLETES:
+            if athlete.get("race") != race_id:
+                continue
+            futures.append(executor.submit(simulate_athlete, race_id, athlete, points, batch_mode, batch_size))
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                logger.error(f"Erro em atleta da corrida {race_id}: {e}")
+    logger.info(f"[{race_id}] Corrida concluída")
 
-    threads = []
-    for athlete in ATHLETES:
-        if athlete.get("race") != race_id:
-            continue
-        th = Thread(target=simulate_athlete, args=(race_id, athlete, points), daemon=True)
-        threads.append(th)
-        th.start()
 
-    for th in threads:
-        th.join()
-    print(f"[{race_id}] Corrida concluída")
-
-
-def simulate_all_races():
+def simulate_all_races(batch_mode=False, batch_size=10):
     """
     Descobre todas as corridas e executa cada uma em paralelo.
     """
@@ -265,24 +292,31 @@ def simulate_all_races():
     # Gerar atletas dinamicamente
     ATHLETES = generate_athletes(NUM_ATHLETES, races)
 
-    race_threads = []
-    for race_id, gpx_path in races.items():
-        t = Thread(target=simulate_race, args=(race_id, gpx_path), daemon=True)
-        race_threads.append(t)
-        t.start()
-
-    for t in race_threads:
-        t.join()
+    # Inicializar pool de conexões/canais
+    _init_rabbitmq_pool()
+    # Cache de pontos GPX por corrida
+    with ThreadPoolExecutor(max_workers=min(4, len(races))) as executor:
+        futures = []
+        for race_id, gpx_path in races.items():
+            futures.append(executor.submit(simulate_race, race_id, gpx_path, batch_mode, batch_size))
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                logger.error(f"Erro na corrida: {e}")
 
 if __name__ == "__main__":
     # Inicia Prometheus na porta 8080
     start_http_server(8080)
-    print("Servidor de métricas Prometheus iniciado na porta 8080")
+    logger.info("Servidor de métricas Prometheus iniciado na porta 8080")
     # Inicia o endpoint /health na porta 8081
     health_thread = Thread(target=run_health_server, daemon=True)
     health_thread.start()
-    print("Endpoint de health iniciado na porta 8081 (/health)")
-    simulate_all_races()
+    logger.info("Endpoint de health iniciado na porta 8081 (/health)")
+    # Parâmetros de batch podem ser ajustados por env
+    batch_mode = os.getenv("SIM_BATCH_MODE", "0") == "1"
+    batch_size = int(os.getenv("SIM_BATCH_SIZE", "10"))
+    simulate_all_races(batch_mode=batch_mode, batch_size=batch_size)
     # Mantém o processo vivo para scraping de métricas e health
     while True:
         time.sleep(60)
