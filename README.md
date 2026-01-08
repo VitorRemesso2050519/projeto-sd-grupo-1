@@ -6,6 +6,14 @@ Para o ArgoCD:
 - kubectl -n argocd port-forward svc/argocd-server 8080:443
 - kubectl apply -n argocd -f k8s/trail-run-app.yaml
 
+####
+NOTA:
+
+Para poder fazer deployment local com o ARGOCD é necessário renomear estes ficheiros no repositório, pasta k8s:
+	- pvc-gpx-local.yaml_bak  -> pvc-gpx-local.yaml
+	- pvc-gpx.yaml -> pvc-gpx.yaml_bak
+####
+
 Elimina Replicas (RS) vazias (sem pods associados)
 - kubectl get rs -n argocd | Select-String " 0 " | ForEach-Object { $rs = $_.ToString().Split(" ")[0]; kubectl delete rs $rs -n argocd }
 
