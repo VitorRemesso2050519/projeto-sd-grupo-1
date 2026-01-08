@@ -77,11 +77,22 @@ def generate_athletes(num, races):
     athletes_per_race = [base] * num_races
     for i in range(resto):
         athletes_per_race[i] += 1
+
+    used_names = set()
+
+    def get_unique_name():
+        # Gera nomes até encontrar um que não foi usado
+        while True:
+            name = generate_random_name()
+            if name not in used_names:
+                used_names.add(name)
+                return name
+
     # Criar atletas para cada corrida
     for race_idx, n_ath in enumerate(athletes_per_race):
         for _ in range(n_ath):
             athlete = {
-                "name": generate_random_name(),
+                "name": get_unique_name(),
                 "gender": random.choice(genders),
                 "race": race_ids[race_idx]
             }
