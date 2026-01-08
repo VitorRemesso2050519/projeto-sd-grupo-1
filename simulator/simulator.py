@@ -289,6 +289,7 @@ def _publish_event(ch, event, name, race_id):
             ),
         )
         messages_published_total.labels(athlete=name, race=race_id).inc()
+        logger.info(f"[PUB] Corrida: {race_id} | Atleta: {name} | Localização: {event.get('location')} | Evento: {event.get('event')}")
         if DEBUG:
             logger.debug(f"[{race_id}] Publicado: {event}")
     except pika.exceptions.AMQPError as pub_exc:
@@ -298,6 +299,7 @@ def _publish_event(ch, event, name, race_id):
 def _publish_batch(ch, batch, name, race_id):
     """Publica um lote de eventos no RabbitMQ."""
     for event in batch:
+        logger.info(f"[BATCH PUB] Corrida: {race_id} | Atleta: {name} | Localização: {event.get('location')} | Evento: {event.get('event')}")
         _publish_event(ch, event, name, race_id)
 
 def simulate_race(race_id, gpx_file, batch_mode=False, batch_size=10):
