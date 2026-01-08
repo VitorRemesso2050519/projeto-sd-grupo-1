@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rabbitmq
+  name: rabbitmq-cluster
   namespace: rabbitmq-system
   labels: { app: rabbitmq }
 spec:
@@ -52,7 +52,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: rabbitmq
+  name: rabbitmq-cluster
   namespace: rabbitmq-system
 spec:
   selector: { app: rabbitmq }
