@@ -13,4 +13,4 @@ data:
   SIM_POOL_SIZE: "15"           # Tamanho do pool de conexões/canais RabbitMQ
   SIM_BATCH_MODE: "0"          # 1 para ativar batch de publicação
   SIM_BATCH_SIZE: "10"         # Tamanho do lote de eventos no batch
-  SIM_LOG_LEVEL: "INFO"        # Nível de logging: DEBUG, INFO, WARNING, ERROR
+  SIM_LOG_LEVEL: "DEBUG"        # Nível de logging: DEBUG, INFO, WARNING, ERROR
