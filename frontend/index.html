@@ -220,6 +220,21 @@
             runnerSelect.innerHTML = '<option value="">Pick runner</option>';
         }
 
+        // Preenche a lista de atletas já conhecidos para a corrida selecionada
+        function fillRunnersForCurrentRace() {
+            const race = raceSelect.value;
+            if (!race || !athletesByRace[race]) return;
+            const knownAthletes = Array.from(athletesByRace[race]);
+            knownAthletes.forEach(name => {
+                if (![...runnerSelect.options].some(o => o.value === name)) {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    runnerSelect.appendChild(opt);
+                }
+            });
+        }
+
         // Track athletes per race (garante unicidade)
         const athletesByRace = {};
 
@@ -311,7 +326,6 @@
                 socket = null;
             }
             clearRunners();
-            
             // Se não há corrida selecionada, limpar também o GPX e não conectar
             if (!race) {
                 try { if (gpxLayer) map.removeLayer(gpxLayer); } catch (_) {}
@@ -320,7 +334,8 @@
                 map.setView([32.65, -16.9], 10);
                 return;
             }
-            
+            // Preenche a lista de atletas já conhecidos
+            fillRunnersForCurrentRace();
             loadRouteForRace(race);
             connectWebSocket();
         });
