@@ -1,0 +1,15 @@
+# PersistentVolumeClaim para ficheiros GPX
+# Permite acesso ReadWriteMany (RWX) para múltiplos pods
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-gpx
+  namespace: grupo1
+spec:
+  accessModes:
+    - ReadWriteMany        # Requer suporte RWX (NFS, StorageClass com RWX)
+  resources:
+    requests:
+      storage: 1Gi
+  # opcional: especificar storageClassName se o cluster exigir
+  # storageClassName: nfs-storage
