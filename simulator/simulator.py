@@ -27,7 +27,7 @@ DEBUG = os.getenv("SIM_DEBUG", "0") == "1"
 # Pasta onde estão os ficheiros GPX das corridas
 GPX_FOLDER = os.getenv("GPX_FOLDER", "./gpx-files")
 # URL de ligação ao RabbitMQ
-RABBIT_URL = os.getenv("RABBIT_URL", "amqp://grupo1:a1s2d3f4g5h6@rabbitmq-cluster.rabbitmq-system.svc.cluster.local:5672/")
+RABBIT_URL = os.getenv("RABBIT_URL", "")
 # Exchange para publicação dos eventos
 RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")
 # Routing key para eventos de GPS
