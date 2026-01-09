@@ -237,7 +237,6 @@ def simulate_athlete(race_id, athlete, points, batch_mode=False, batch_size=10):
     ch = None
     active_athletes.inc()
     try:
-        conn, ch = get_pooled_channel()
         if DEBUG:
             logger.info(f"[{race_id}] A simular {name} ({gender}) a {speed_kmh:.2f} km/h")
         batch = []
@@ -265,20 +264,31 @@ def simulate_athlete(race_id, athlete, points, batch_mode=False, batch_size=10):
                     }
                     batch.append(event)
                     if batch_mode and len(batch) >= batch_size:
-                        _publish_batch(ch, batch, name, race_id)
+                        conn, ch = get_pooled_channel()
+                        try:
+                            _publish_batch(ch, batch, name, race_id)
+                        finally:
+                            release_pooled_channel(conn, ch)
                         batch.clear()
                     elif not batch_mode:
-                        _publish_event(ch, event, name, race_id)
+                        conn, ch = get_pooled_channel()
+                        try:
+                            _publish_event(ch, event, name, race_id)
+                        finally:
+                            release_pooled_channel(conn, ch)
                     time.sleep(PUBLISH_INTERVAL)
             except Exception as loop_exc:
                 logger.error(f"[{race_id}] Erro no ponto {i} do atleta {name}: {loop_exc}")
         if batch_mode and batch:
-            _publish_batch(ch, batch, name, race_id)
+            conn, ch = get_pooled_channel()
+            try:
+                _publish_batch(ch, batch, name, race_id)
+            finally:
+                release_pooled_channel(conn, ch)
     except Exception as e:
         logger.error(f"[{race_id}] Erro na simulação do atleta {name}: {e}")
     finally:
         active_athletes.dec()
-        release_pooled_channel(conn, ch)
 def _publish_event(ch, event, name, race_id):
     """Publica um único evento no RabbitMQ."""
     try:
@@ -388,8 +398,8 @@ def simulate_all_races(batch_mode=False, batch_size=10):
 
     # Submeter todos os atletas de todas as corridas para execução paralela
     all_futures = []
-    # Limitar o paralelismo global ao tamanho do pool de conexões/canais
-    with ThreadPoolExecutor(max_workers=POOL_SIZE) as executor:
+    # Permitir simulação de todos os atletas em paralelo
+    with ThreadPoolExecutor(max_workers=len(ATHLETES)) as executor:
         for athlete in ATHLETES:
             race_id = athlete['race']
             points = gpx_points_by_race.get(race_id)
