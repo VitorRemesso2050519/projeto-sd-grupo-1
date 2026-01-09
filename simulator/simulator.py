@@ -244,6 +244,23 @@ def simulate_athlete(race_id, athlete, points, batch_mode=False, batch_size=10):
     try:
         if DEBUG:
             logger.info(f"[{race_id}] A simular {name} ({gender}) a {speed_kmh:.2f} km/h")
+        # ENVIO DE EVENTO MAL FORMATADO PARA TESTE
+        conn, ch = get_pooled_channel()
+        try:
+            malformed_event = "{race_id: 'MALFORMED', athlete: '???', location: [0,0], event: running"  # JSON inválido
+            ch.basic_publish(
+                exchange=RABBIT_EXCHANGE,
+                routing_key=RABBIT_ROUTING_KEY,
+                body=malformed_event.encode("utf-8"),
+                properties=pika.BasicProperties(
+                    content_type="application/json",
+                    delivery_mode=2,
+                ),
+            )
+            logger.info(f"[PUB-TESTE] Evento mal formatado enviado para {race_id}")
+        finally:
+            release_pooled_channel(conn, ch)
+        # FIM DO ENVIO DE EVENTO MAL FORMATADO
         for i in range(len(points) - 1):
             try:
                 start = points[i]
