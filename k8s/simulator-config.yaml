@@ -11,4 +11,4 @@ data:
   SIM_NUM_ATHLETES: "15"  # Número de atletas simulados por corrida
   # --- Variáveis de performance e logging ---
   SIM_POOL_SIZE: "10"           # Tamanho do pool de conexões/canais RabbitMQ
-  SIM_LOG_LEVEL: "WARNING"        # Nível de logging: DEBUG, INFO, WARNING, ERROR
+  SIM_LOG_LEVEL: "INFO"        # Nível de logging: DEBUG, INFO, WARNING, ERROR
