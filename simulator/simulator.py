@@ -97,8 +97,18 @@ SPEED_VARIATION = (6, 12)
 ###############################################################################
 def generate_random_name():
     """Gera um nome aleatório para atleta."""
-    first_names = ["John", "Jane", "Alice", "Bob", "Michael", "Serena", "Usain", "Maria", "Carlos", "Ana", "David", "Laura", "Pedro", "Sofia", "Miguel", "Rita"]
-    last_names = ["Doe", "Smith", "Johnson", "Brown", "Phelps", "Williams", "Bolt", "Silva", "Costa", "Martins", "Oliveira", "Santos", "Ferreira", "Gomes", "Alves", "Rocha"]
+    first_names = [
+        "John", "Jane", "Alice", "Bob", "Michael", "Serena", "Usain", "Maria",
+        "Carlos", "Ana", "David", "Laura", "Pedro", "Sofia", "Miguel", "Rita",
+        "Tiago", "Beatriz", "João", "Patrícia", "André", "Carolina", "Ricardo", "Inês",
+        "Francisco", "Marta", "Bruno", "Helena", "Diogo", "Catarina", "Guilherme", "Raquel"
+    ]
+    last_names = [
+        "Doe", "Smith", "Johnson", "Brown", "Phelps", "Williams", "Bolt", "Silva",
+        "Costa", "Martins", "Oliveira", "Santos", "Ferreira", "Gomes", "Alves", "Rocha",
+        "Sousa", "Barros", "Pereira", "Mendes", "Lopes", "Ramos", "Teixeira", "Correia",
+        "Monteiro", "Faria", "Henriques", "Cunha", "Neves", "Fonseca", "Moura", "Vasconcelos"
+    ]
     return f"{random.choice(first_names)} {random.choice(last_names)}"
 
 def generate_athletes(num, races):
