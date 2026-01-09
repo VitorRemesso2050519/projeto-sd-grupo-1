@@ -242,33 +242,36 @@ def simulate_athlete(race_id, athlete, points, batch_mode=False, batch_size=10):
             logger.info(f"[{race_id}] A simular {name} ({gender}) a {speed_kmh:.2f} km/h")
         batch = []
         for i in range(len(points) - 1):
-            start = points[i]
-            end = points[i + 1]
-            distance = start.distance_3d(end) or 0.0
-            duration = max(int(distance / speed_mps), 1)
-            for t in range(duration + 1):
-                fraction = t / duration
-                lat = (start.latitude or 0.0) + fraction * ((end.latitude or 0.0) - (start.latitude or 0.0))
-                lon = (start.longitude or 0.0) + fraction * ((end.longitude or 0.0) - (start.longitude or 0.0))
-                s_ele = start.elevation or 0.0
-                e_ele = end.elevation or 0.0
-                ele = s_ele + fraction * (e_ele - s_ele)
-                event = {
-                    "race_id": race_id,
-                    "athlete": name,
-                    "gender": gender,
-                    "location": {"latitude": lat, "longitude": lon},
-                    "elevation": ele,
-                    "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                    "event": "running",
-                }
-                batch.append(event)
-                if batch_mode and len(batch) >= batch_size:
-                    _publish_batch(ch, batch, name, race_id)
-                    batch.clear()
-                elif not batch_mode:
-                    _publish_event(ch, event, name, race_id)
-                time.sleep(PUBLISH_INTERVAL)
+            try:
+                start = points[i]
+                end = points[i + 1]
+                distance = start.distance_3d(end) or 0.0
+                duration = max(int(distance / speed_mps), 1)
+                for t in range(duration + 1):
+                    fraction = t / duration
+                    lat = (start.latitude or 0.0) + fraction * ((end.latitude or 0.0) - (start.latitude or 0.0))
+                    lon = (start.longitude or 0.0) + fraction * ((end.longitude or 0.0) - (start.longitude or 0.0))
+                    s_ele = start.elevation or 0.0
+                    e_ele = end.elevation or 0.0
+                    ele = s_ele + fraction * (e_ele - s_ele)
+                    event = {
+                        "race_id": race_id,
+                        "athlete": name,
+                        "gender": gender,
+                        "location": {"latitude": lat, "longitude": lon},
+                        "elevation": ele,
+                        "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                        "event": "running",
+                    }
+                    batch.append(event)
+                    if batch_mode and len(batch) >= batch_size:
+                        _publish_batch(ch, batch, name, race_id)
+                        batch.clear()
+                    elif not batch_mode:
+                        _publish_event(ch, event, name, race_id)
+                    time.sleep(PUBLISH_INTERVAL)
+            except Exception as loop_exc:
+                logger.error(f"[{race_id}] Erro no ponto {i} do atleta {name}: {loop_exc}")
         if batch_mode and batch:
             _publish_batch(ch, batch, name, race_id)
     except Exception as e:
