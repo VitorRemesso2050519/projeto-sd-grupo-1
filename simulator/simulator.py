@@ -225,21 +225,15 @@ def discover_races():
 ###############################################################################
 def simulate_athlete(race_id, athlete, points, batch_mode=False, batch_size=10):
     """Simula um atleta numa corrida, publicando eventos de localização para o RabbitMQ."""
-    """
-    Simula um atleta numa corrida específica.
-    """
     name = athlete["name"]
     gender = athlete["gender"]
     speed_kmh = random.uniform(*SPEED_VARIATION)
     speed_mps = max(speed_kmh / 3.6, 0.1)
 
-    conn = None
-    ch = None
     active_athletes.inc()
     try:
         if DEBUG:
             logger.info(f"[{race_id}] A simular {name} ({gender}) a {speed_kmh:.2f} km/h")
-        batch = []
         for i in range(len(points) - 1):
             try:
                 start = points[i]
@@ -262,29 +256,14 @@ def simulate_athlete(race_id, athlete, points, batch_mode=False, batch_size=10):
                         "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                         "event": "running",
                     }
-                    batch.append(event)
-                    if batch_mode and len(batch) >= batch_size:
-                        conn, ch = get_pooled_channel()
-                        try:
-                            _publish_batch(ch, batch, name, race_id)
-                        finally:
-                            release_pooled_channel(conn, ch)
-                        batch.clear()
-                    elif not batch_mode:
-                        conn, ch = get_pooled_channel()
-                        try:
-                            _publish_event(ch, event, name, race_id)
-                        finally:
-                            release_pooled_channel(conn, ch)
+                    conn, ch = get_pooled_channel()
+                    try:
+                        _publish_event(ch, event, name, race_id)
+                    finally:
+                        release_pooled_channel(conn, ch)
                     time.sleep(PUBLISH_INTERVAL)
             except Exception as loop_exc:
                 logger.error(f"[{race_id}] Erro no ponto {i} do atleta {name}: {loop_exc}")
-        if batch_mode and batch:
-            conn, ch = get_pooled_channel()
-            try:
-                _publish_batch(ch, batch, name, race_id)
-            finally:
-                release_pooled_channel(conn, ch)
     except Exception as e:
         logger.error(f"[{race_id}] Erro na simulação do atleta {name}: {e}")
     finally:
@@ -309,13 +288,9 @@ def _publish_event(ch, event, name, race_id):
         publish_errors_total.inc()
         logger.error(f"[{race_id}] Erro ao publicar evento: {pub_exc}")
 
-def _publish_batch(ch, batch, name, race_id):
-    """Publica um lote de eventos no RabbitMQ."""
-    for event in batch:
-        logger.info(f"[BATCH PUB] Corrida: {race_id} | Atleta: {name} | Localização: {event.get('location')} | Evento: {event.get('event')}")
-        _publish_event(ch, event, name, race_id)
 
-def simulate_race(race_id, gpx_file, batch_mode=False, batch_size=10):
+
+def simulate_race(race_id, gpx_file):
     """Executa a simulação de uma corrida, criando threads para cada atleta."""
     """
     Run a single race: read points, start threads only for athletes in this race.
@@ -344,7 +319,7 @@ def simulate_race(race_id, gpx_file, batch_mode=False, batch_size=10):
     with ThreadPoolExecutor(max_workers=num_atletas) as executor:
         futures = []
         for athlete in atletas_corrida:
-            futures.append(executor.submit(simulate_athlete, race_id, athlete, points, batch_mode, batch_size))
+            futures.append(executor.submit(simulate_athlete, race_id, athlete, points))
         for future in as_completed(futures):
             try:
                 future.result()
@@ -356,7 +331,7 @@ def simulate_race(race_id, gpx_file, batch_mode=False, batch_size=10):
 ###############################################################################
 # EXECUÇÃO PRINCIPAL DA SIMULAÇÃO
 ###############################################################################
-def simulate_all_races(batch_mode=False, batch_size=10):
+def simulate_all_races():
     """Descobre corridas, gera atletas e executa simulação para todas as corridas em paralelo."""
     """
     Descobre todas as corridas e executa cada uma em paralelo.
@@ -406,7 +381,7 @@ def simulate_all_races(batch_mode=False, batch_size=10):
             if not points:
                 logger.warning(f"[SIM] Atleta {athlete['name']} ignorado: corrida {race_id} sem pontos carregados.")
                 continue
-            all_futures.append(executor.submit(simulate_athlete, race_id, athlete, points, batch_mode, batch_size))
+            all_futures.append(executor.submit(simulate_athlete, race_id, athlete, points))
         for future in as_completed(all_futures):
             try:
                 future.result()
@@ -424,10 +399,7 @@ if __name__ == "__main__":
     health_thread = Thread(target=run_health_server, daemon=True)
     health_thread.start()
     logger.info("Endpoint de health iniciado na porta 8081 (/health)")
-    # Parâmetros de batch podem ser ajustados por env
-    batch_mode = os.getenv("SIM_BATCH_MODE", "0") == "1"
-    batch_size = int(os.getenv("SIM_BATCH_SIZE", "10"))
-    simulate_all_races(batch_mode=batch_mode, batch_size=batch_size)
+    simulate_all_races()
     # Mantém o processo vivo para scraping de métricas e health
     while True:
         time.sleep(60)

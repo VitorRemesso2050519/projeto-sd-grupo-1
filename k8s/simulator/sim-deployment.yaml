@@ -69,16 +69,6 @@ spec:
                 configMapKeyRef:
                   name: simulator-config
                   key: SIM_POOL_SIZE
-            - name: SIM_BATCH_MODE
-              valueFrom:
-                configMapKeyRef:
-                  name: simulator-config
-                  key: SIM_BATCH_MODE
-            - name: SIM_BATCH_SIZE
-              valueFrom:
-                configMapKeyRef:
-                  name: simulator-config
-                  key: SIM_BATCH_SIZE
             - name: SIM_LOG_LEVEL
               valueFrom:
                 configMapKeyRef:
