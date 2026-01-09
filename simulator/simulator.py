@@ -369,16 +369,38 @@ def simulate_all_races(batch_mode=False, batch_size=10):
 
     # Inicializar pool de conexões/canais
     _init_rabbitmq_pool()
-    # Cache de pontos GPX por corrida
-    with ThreadPoolExecutor(max_workers=min(4, len(races))) as executor:
-        futures = []
-        for race_id, gpx_path in races.items():
-            futures.append(executor.submit(simulate_race, race_id, gpx_path, batch_mode, batch_size))
-        for future in as_completed(futures):
+    # Carregar pontos GPX de todas as corridas
+    gpx_points_by_race = {}
+    for race_id, gpx_path in races.items():
+        gpx = read_gpx(gpx_path)
+        if not gpx:
+            logger.error(f"[{race_id}] GPX inválido ou erro ao ler/parsing: {gpx_path}")
+            continue
+        points = []
+        for track in gpx.tracks:
+            for segment in track.segments:
+                points.extend(segment.points)
+        if not points:
+            logger.error(f"[{race_id}] Nenhum ponto encontrado no GPX: {gpx_path}")
+            continue
+        gpx_points_by_race[race_id] = points
+        logger.info(f"[SIM] Corrida {race_id}: {len(points)} pontos GPX carregados (pré-cache)")
+
+    # Submeter todos os atletas de todas as corridas para execução paralela
+    all_futures = []
+    with ThreadPoolExecutor(max_workers=len(ATHLETES)) as executor:
+        for athlete in ATHLETES:
+            race_id = athlete['race']
+            points = gpx_points_by_race.get(race_id)
+            if not points:
+                logger.warning(f"[SIM] Atleta {athlete['name']} ignorado: corrida {race_id} sem pontos carregados.")
+                continue
+            all_futures.append(executor.submit(simulate_athlete, race_id, athlete, points, batch_mode, batch_size))
+        for future in as_completed(all_futures):
             try:
                 future.result()
             except Exception as e:
-                logger.error(f"Erro na corrida: {e}")
+                logger.error(f"Erro na simulação de atleta: {e}")
 
 ###############################################################################
 # ENTRADA PRINCIPAL
