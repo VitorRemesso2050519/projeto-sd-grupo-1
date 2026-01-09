@@ -1,3 +1,7 @@
+
+# -----------------------------
+# Importações principais
+# -----------------------------
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
@@ -11,55 +15,63 @@ from typing import List, Dict, Set
 import aio_pika
 import time
 
-# --- Configuração (pode ser sobrescrita por variáveis de ambiente) ---
-RABBIT_URL = os.getenv("RABBIT_URL", "amqp://grupo1:a1s2d3f4g5h6@rabbitmq-cluster.rabbitmq-system.svc.cluster.local:5672/")  # URL de ligação ao RabbitMQ
+
+# -----------------------------
+# Configuração de ambiente
+# -----------------------------
+RABBIT_URL = os.getenv("RABBIT_URL", "")  # URL de ligação ao RabbitMQ
 RABBIT_EXCHANGE = os.getenv("RABBIT_EXCHANGE", "events")  # Exchange para publicação dos eventos
 RABBIT_QUEUE = os.getenv("RABBIT_QUEUE", "events.gps")  # Fila para eventos de GPS
 REQUIRED_FIELDS = {"race_id", "athlete", "gender", "location", "elevation", "time", "event"}
 
-# Instancia a aplicação FastAPI
+
+# -----------------------------
+# Instanciação da aplicação FastAPI
+# -----------------------------
 app = FastAPI(title="Trail Backend (WS + RabbitMQ)")
 
-# --- Métricas Prometheus ---
+
+# -----------------------------
+# Métricas Prometheus
+# -----------------------------
 # Tráfego: Total de requisições HTTP
 http_requests_total = Counter(
     'http_requests_total',
     'Total de requisições HTTP',
     ['method', 'endpoint', 'status']
 )
-
 # Latência: Duração das requisições HTTP
 http_request_duration_seconds = Histogram(
     'http_request_duration_seconds',
     'Duração das requisições HTTP em segundos',
     ['method', 'endpoint']
 )
-
 # Erros: Total de erros
 http_errors_total = Counter(
     'http_errors_total',
     'Total de erros HTTP',
     ['method', 'endpoint', 'status']
 )
-
 # Saturação: Conexões WebSocket ativas
 websocket_connections_active = Gauge(
     'websocket_connections_active',
     'Número de conexões WebSocket ativas'
 )
-
 # Tráfego RabbitMQ: Mensagens consumidas
 rabbitmq_messages_consumed_total = Counter(
     'rabbitmq_messages_consumed_total',
     'Total de mensagens consumidas do RabbitMQ'
 )
-
 # Erros RabbitMQ
 rabbitmq_errors_total = Counter(
     'rabbitmq_errors_total',
     'Total de erros ao consumir mensagens do RabbitMQ'
 )
 
+
+# -----------------------------
+# Middleware CORS
+# -----------------------------
 # Permitir CORS para o frontend (em produção, restringir aos domínios necessários)
 app.add_middleware(
     CORSMiddleware,
@@ -69,47 +81,55 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Ligações WebSocket ativas (apenas para instância atual)
-connections: List[WebSocket] = []
-connections_by_race: Dict[str, Set[WebSocket]] = defaultdict(set)
-known_races: Set[str] = set()
-athletes_by_race: Dict[str, Set[str]] = defaultdict(set)
 
-# Middleware para medir latência e tráfego
+# -----------------------------
+# Estado das conexões WebSocket e corridas/atletas
+# -----------------------------
+connections: List[WebSocket] = []  # Todas as conexões WebSocket ativas
+connections_by_race: Dict[str, Set[WebSocket]] = defaultdict(set)  # Conexões por corrida
+known_races: Set[str] = set()  # Corridas conhecidas
+athletes_by_race: Dict[str, Set[str]] = defaultdict(set)  # Atletas por corrida
+
+
+# -----------------------------
+# Middleware para métricas HTTP
+# -----------------------------
 @app.middleware("http")
 async def metrics_middleware(request, call_next):
+    """Mede latência, tráfego e erros das requisições HTTP."""
     start_time = time.time()
     method = request.method
     endpoint = request.url.path
-    
     try:
         response = await call_next(request)
         status = response.status_code
-        
         # Registar tráfego
         http_requests_total.labels(method=method, endpoint=endpoint, status=status).inc()
-        
         # Registar erros (status >= 400)
         if status >= 400:
             http_errors_total.labels(method=method, endpoint=endpoint, status=status).inc()
-        
         # Registar latência
         duration = time.time() - start_time
         http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(duration)
-        
         return response
     except Exception as e:
         # Registar erros de exceção
         http_errors_total.labels(method=method, endpoint=endpoint, status=500).inc()
         raise
 
+
+# -----------------------------
+# Endpoints HTTP principais
+# -----------------------------
 @app.get("/metrics")
 async def metrics():
     """Endpoint para expor métricas Prometheus"""
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
+
 @app.get("/")
 async def health():
+    """Endpoint raiz para healthcheck simples."""
     return {"status": "ok"}
 
 @app.get("/health")
@@ -117,16 +137,22 @@ async def health():
     """Endpoint para healthcheck do serviço."""
     return {"status": "ok"}
 
+
 @app.get("/races")
 async def list_races():
     """Lista corridas observadas pelo consumidor/backend."""
     return {"races": sorted(known_races)}
+
 
 @app.get("/races/{race_id}/athletes")
 async def list_athletes(race_id: str):
     """Lista atletas observados numa corrida."""
     return {"race": race_id, "athletes": sorted(athletes_by_race.get(race_id, set()))}
 
+
+# -----------------------------
+# Endpoint WebSocket
+# -----------------------------
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """Endpoint WebSocket para comunicação em tempo real com clientes."""
@@ -150,6 +176,10 @@ async def websocket_endpoint(websocket: WebSocket):
         print("Cliente WebSocket desconectado")
 
 
+
+# -----------------------------
+# Endpoint HTTP para eventos (retrocompatibilidade)
+# -----------------------------
 @app.post("/events")
 async def receive_event(event: dict):
     """
@@ -162,6 +192,10 @@ async def receive_event(event: dict):
     return {"status": "evento enviado"}
 
 
+
+# -----------------------------
+# Função de difusão de eventos para WebSocket
+# -----------------------------
 async def _broadcast(event: dict):
     """Envia um evento para clientes subscritos na corrida do evento."""
     disconnected = []
@@ -187,8 +221,9 @@ async def _broadcast(event: dict):
             subs.discard(ws)
 
 
+
 # -----------------------------
-# Consumidor resiliente RabbitMQ
+# Loop consumidor resiliente RabbitMQ
 # -----------------------------
 async def _consume_loop():
     """
@@ -210,21 +245,17 @@ async def _consume_loop():
                 )
                 queue = await channel.declare_queue(RABBIT_QUEUE, durable=True)
                 await queue.bind(exchange)
-
                 # Reset ao backoff após ligação bem-sucedida
                 backoff = 1
                 print("Consumidor RabbitMQ ligado e pronto.")
-
                 async with queue.iterator() as q:
                     async for message in q:
                         try:
                             body = message.body.decode("utf-8")
                             event = json.loads(body)
-                            
-                            # Validate event schema
+                            # Validar schema do evento
                             if not isinstance(event, dict) or not REQUIRED_FIELDS.issubset(event.keys()):
                                 raise ValueError(f"Invalid event schema: {event}")
-                            
                             rabbitmq_messages_consumed_total.inc()
                             await _broadcast(event)
                             await message.ack()
@@ -240,7 +271,6 @@ async def _consume_loop():
                 # Fecha a ligação se sair do loop de consumo
                 with contextlib.suppress(Exception):
                     await conn.close()
-
         except Exception as e:
             # Falha de ligação ou canal; tenta novamente com backoff
             rabbitmq_errors_total.inc()  # Registar erro de conexão
@@ -249,11 +279,14 @@ async def _consume_loop():
             backoff = min(backoff * 2, 30)  # máximo 30s
 
 
+
+# -----------------------------
+# Eventos de ciclo de vida da aplicação
+# -----------------------------
 @app.on_event("startup")
 async def start_bg_consumer():
     """Inicia o consumidor RabbitMQ em background ao arrancar o serviço."""
     app.state.consumer_task = asyncio.create_task(_consume_loop())
-
 
 @app.on_event("shutdown")
 async def stop_bg_consumer():
@@ -269,7 +302,10 @@ async def stop_bg_consumer():
             await ws.close()
     connections.clear()
 
-# Documentação para integração do frontend:
+
+# -----------------------------
+# Documentação para integração do frontend
+# -----------------------------
 # O frontend deve ligar-se ao endpoint WebSocket do backend em ws://<host>:8000/ws
 # Os eventos recebidos são enviados em formato JSON e contêm os campos:
 # athlete, gender, location, elevation, time, event
