@@ -388,7 +388,8 @@ def simulate_all_races(batch_mode=False, batch_size=10):
 
     # Submeter todos os atletas de todas as corridas para execução paralela
     all_futures = []
-    with ThreadPoolExecutor(max_workers=len(ATHLETES)) as executor:
+    # Limitar o paralelismo global ao tamanho do pool de conexões/canais
+    with ThreadPoolExecutor(max_workers=POOL_SIZE) as executor:
         for athlete in ATHLETES:
             race_id = athlete['race']
             points = gpx_points_by_race.get(race_id)
