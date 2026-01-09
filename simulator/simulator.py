@@ -247,6 +247,7 @@ def simulate_athlete(race_id, athlete, points, batch_mode=False, batch_size=10):
         # ENVIO DE EVENTO MAL FORMATADO PARA TESTE
         conn, ch = get_pooled_channel()
         try:
+            # Evento JSON inválido (sintaxe)
             malformed_event = "{race_id: 'MALFORMED', athlete: '???', location: [0,0], event: running"  # JSON inválido
             ch.basic_publish(
                 exchange=RABBIT_EXCHANGE,
@@ -258,6 +259,26 @@ def simulate_athlete(race_id, athlete, points, batch_mode=False, batch_size=10):
                 ),
             )
             logger.info(f"[PUB-TESTE] Evento mal formatado enviado para {race_id}")
+
+            # Evento JSON válido, mas faltando campo obrigatório (race_id)
+            incomplete_event = {
+                "athlete": name,
+                "gender": gender,
+                "location": {"latitude": 0, "longitude": 0},
+                "elevation": 0,
+                "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "event": "running"
+            }
+            ch.basic_publish(
+                exchange=RABBIT_EXCHANGE,
+                routing_key=RABBIT_ROUTING_KEY,
+                body=json.dumps(incomplete_event).encode("utf-8"),
+                properties=pika.BasicProperties(
+                    content_type="application/json",
+                    delivery_mode=2,
+                ),
+            )
+            logger.info(f"[PUB-TESTE] Evento incompleto (sem race_id) enviado para {race_id}")
         finally:
             release_pooled_channel(conn, ch)
         # FIM DO ENVIO DE EVENTO MAL FORMATADO
