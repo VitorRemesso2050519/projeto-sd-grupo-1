@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: simulator-config
 data:
-  SIM_DEBUG: "0"
+  SIM_DEBUG: "1"
   GPX_FOLDER: "/app/gpx-files"
   RABBIT_EXCHANGE: "events"
   RABBIT_ROUTING_KEY: "gps.update"
